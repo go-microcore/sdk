@@ -7,6 +7,7 @@ import "time"
 type SigninData struct {
 	Login    string          `json:"login"`
 	Password string          `json:"password"`
+	Device   string          `json:"device"`
 	Metadata *SigninMetadata `json:"metadata"`
 }
 

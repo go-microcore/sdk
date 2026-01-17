@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"go.microcore.dev/framework/errors"
 	"go.microcore.dev/framework/transport/http"
@@ -34,268 +36,17 @@ type adapter struct {
 	authKey             string
 }
 
-func (a *adapter) Auth(ctx context.Context, data AuthData) (*AuthResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
+// Devices
 
-	// Encode body
-	encBody, err := a.encrypt(body)
-	if err != nil {
-		return nil, fmt.Errorf("error encode body: %v", err)
-	}
+func (a *adapter) GetDevices(ctx context.Context, authToken string) ([]DeviceResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/devices")
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(encBody),
-		client.WithRequestContext(ctx),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 200 {
-		var response AuthResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request": errors.ErrBadRequest,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Encode body
-	encBody, err := a.encrypt(body)
-	if err != nil {
-		return nil, fmt.Errorf("error encode body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/2fa",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(encBody),
-		client.WithRequestContext(ctx),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 200 {
-		var response Auth2faResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request": errors.ErrBadRequest,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) TokenRenew(ctx context.Context, data TokenRenewData) (*TokenRenewResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/token/renew",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 200 {
-		var response TokenRenewResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token":      ErrInvalidToken,
-		"bad_request:token_already_used": ErrTokenAlreadyUsed,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) TokenValidate(ctx context.Context, data TokenValidateData) (*TokenValidateResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/token/validate",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 200 {
-		var response TokenValidateResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token": ErrInvalidToken,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) UserLogout(ctx context.Context, authToken string) error {
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/user/logout/",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 204 {
-		return nil
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
-}
-
-func (a *adapter) UserLogoutAll(ctx context.Context, authToken string) error {
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/user/logout/all",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 204 {
-		return nil
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
-}
-
-func (a *adapter) UserLogoutDevice(ctx context.Context, authToken string, data LogoutDeviceData) error {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/user/logout/device",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 204 {
-		return nil
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
-}
-
-func (a *adapter) UserDevices(ctx context.Context, authToken string) ([]DeviceResult, error) {
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.authServiceEndpoint+"/auth/user/devices",
+		url.String(),
 		client.WithRequestMethod(http.MethodGet),
 		client.WithRequestContext(ctx),
 		client.WithRequestHeaders(
@@ -315,7 +66,833 @@ func (a *adapter) UserDevices(ctx context.Context, authToken string) ([]DeviceRe
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), string(res.Body()))
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+// Logout
+
+func (a *adapter) Logout(ctx context.Context, authToken string) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/logout/")
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) LogoutAll(ctx context.Context, authToken string) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/logout/all")
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) LogoutDevice(ctx context.Context, authToken string, data LogoutDeviceData) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/logout/device")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_device": ErrInvalidDevice,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+// Roles
+
+func (a *adapter) CreateRole(ctx context.Context, authToken string, data CreateRoleData) (*CreateRoleResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/roles/")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 201 {
+		var response CreateRoleResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_role_id":          ErrInvalidRoleId,
+		"bad_request:invalid_role_name":        ErrInvalidRoleName,
+		"bad_request:invalid_role_description": ErrInvalidRoleDescription,
+		"bad_request:role_exist_id":            ErrRoleExistId,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) FilterRoles(ctx context.Context, authToken string, data FilterRolesData) ([]FilterRolesResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/roles/filter")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response []FilterRolesResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return response, nil
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) UpdateRole(ctx context.Context, authToken string, id string, data UpdateRoleData) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/roles/")
+	url.WriteString(id)
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPatch),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_role_id":          ErrInvalidRoleId,
+		"bad_request:invalid_role_name":        ErrInvalidRoleName,
+		"bad_request:invalid_role_description": ErrInvalidRoleDescription,
+		"bad_request:role_not_found":           ErrRoleNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) DeleteRole(ctx context.Context, authToken string, id string) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/roles/")
+	url.WriteString(id)
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodDelete),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:role_not_found": ErrRoleNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+// Rules (HTTP)
+
+func (a *adapter) CreateHttpRule(ctx context.Context, authToken string, data CreateHttpRuleData) (*CreateHttpRuleResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/rules/http/")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 201 {
+		var response CreateHttpRuleResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_role_id": ErrInvalidRoleId,
+		"bad_request:invalid_path":    ErrInvalidPath,
+		"bad_request:invalid_methods": ErrInvalidMethods,
+		"bad_request:rule_exist":      ErrRuleExist,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) FilterHttpRules(ctx context.Context, authToken string, data FilterHttpRulesData) ([]FilterHttpRulesResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/rules/http/filter")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response []FilterHttpRulesResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return response, nil
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) UpdateHttpRule(ctx context.Context, authToken string, id uint, data UpdateHttpRuleData) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/rules/http/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPatch),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_role_id": ErrInvalidRoleId,
+		"bad_request:invalid_path":    ErrInvalidPath,
+		"bad_request:invalid_methods": ErrInvalidMethods,
+		"bad_request:invalid_mfa":     ErrInvalidMfa,
+		"bad_request:rule_not_found":  ErrRuleNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) DeleteHttpRule(ctx context.Context, authToken string, id uint) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/rules/http/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodDelete),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:rule_not_found": ErrRuleNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+// Tokens
+
+func (a *adapter) Auth(ctx context.Context, data AuthData) (*AuthResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Encode body
+	encBody, err := a.encrypt(body)
+	if err != nil {
+		return nil, fmt.Errorf("error encode body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(encBody),
+		client.WithRequestContext(ctx),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response AuthResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request": errors.ErrBadRequest,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/2fa")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Encode body
+	encBody, err := a.encrypt(body)
+	if err != nil {
+		return nil, fmt.Errorf("error encode body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(encBody),
+		client.WithRequestContext(ctx),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response Auth2faResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request": errors.ErrBadRequest,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) TokenRenew(ctx context.Context, data TokenRenewData) (*TokenRenewResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/renew")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response TokenRenewResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_token":      ErrInvalidToken,
+		"bad_request:token_already_used": ErrTokenAlreadyUsed,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) TokenValidate(ctx context.Context, authToken string) (*TokenValidateResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/validate")
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodGet),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response TokenValidateResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_token": ErrInvalidToken,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) TokenAuthorizeHttp(ctx context.Context, authToken string, data TokenAuthorizeHttpData) (*TokenAuthorizeHttpResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/authorize/http")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response TokenAuthorizeHttpResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_token":          ErrInvalidToken,
+		"bad_request:invalid_path":           ErrInvalidPath,
+		"bad_request:invalid_methods":        ErrInvalidMethods,
+		"forbidden:insufficient_permissions": ErrInsufficientPermissions,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+// Static access tokens
+
+func (a *adapter) CreateStaticAccessToken(ctx context.Context, authToken string, data CreateStaticAccessTokenData) (*CreateStaticAccessTokenResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/static/")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 201 {
+		var response CreateStaticAccessTokenResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_id":          ErrInvalidId,
+		"bad_request:invalid_roles":       ErrInvalidRoles,
+		"bad_request:invalid_description": ErrInvalidDescription,
+		"bad_request:static_token_exist":  ErrStaticTokenExist,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) FilterStaticAccessTokens(ctx context.Context, authToken string, data FilterStaticAccessTokenData) ([]FilterStaticAccessTokenResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/static/filter")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response []FilterStaticAccessTokenResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return response, nil
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) DeleteStaticAccessToken(ctx context.Context, authToken string, id string) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.authServiceEndpoint)
+	url.WriteString("/auth/tokens/static/")
+	url.WriteString(id)
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodDelete),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:static_token_not_found": ErrStaticTokenNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
 func (a *adapter) encrypt(data []byte) ([]byte, error) {

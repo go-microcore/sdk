@@ -99,13 +99,14 @@ func (a *adapter) Signup(ctx context.Context, data SignupData) (*SignupResult, e
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		result := SignupResult{
-			Id:       response.Id,
-			Created:  response.Created,
-			Username: response.Username,
-			Email:    response.Email,
-			Name:     response.Name,
-			Role:     SignupRoleResult(response.Role),
-			Mfa:      response.Mfa,
+			Id:         response.Id,
+			Created:    response.Created,
+			Username:   response.Username,
+			Email:      response.Email,
+			Name:       response.Name,
+			Role:       SignupRoleResult(response.Role),
+			Mfa:        response.Mfa,
+			SystemFlag: response.SystemFlag,
 		}
 		return &result, nil
 	}
@@ -152,14 +153,15 @@ func (a *adapter) Profile(ctx context.Context, authToken string) (*ProfileResult
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		result := ProfileResult{
-			Id:       response.Id,
-			Created:  response.Created,
-			Username: response.Username,
-			Email:    response.Email,
-			Name:     response.Name,
-			Role:     ProfileRoleResult(response.Role),
-			Mfa:      response.Mfa,
-			Device:   response.Device,
+			Id:         response.Id,
+			Created:    response.Created,
+			Username:   response.Username,
+			Email:      response.Email,
+			Name:       response.Name,
+			Role:       ProfileRoleResult(response.Role),
+			Mfa:        response.Mfa,
+			SystemFlag: response.SystemFlag,
+			Device:     response.Device,
 		}
 		return &result, nil
 	}
@@ -382,13 +384,14 @@ func (a *adapter) CreateUser(ctx context.Context, authToken string, data CreateU
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		result := CreateUserResult{
-			Id:       response.Id,
-			Created:  response.Created,
-			Username: response.Username,
-			Email:    response.Email,
-			Name:     response.Name,
-			Role:     CreateUserRoleResult(response.Role),
-			Mfa:      response.Mfa,
+			Id:         response.Id,
+			Created:    response.Created,
+			Username:   response.Username,
+			Email:      response.Email,
+			Name:       response.Name,
+			Role:       CreateUserRoleResult(response.Role),
+			Mfa:        response.Mfa,
+			SystemFlag: response.SystemFlag,
 		}
 		return &result, nil
 	}
@@ -400,11 +403,11 @@ func (a *adapter) CreateUser(ctx context.Context, authToken string, data CreateU
 	var errMap = map[string]error{
 		"bad_request:invalid_name":        ErrInvalidName,
 		"bad_request:invalid_username":    ErrInvalidUsername,
-		"bad_request:invalid_email":       ErrInvalidEmail,
 		"bad_request:invalid_password":    ErrInvalidPassword,
-		"bad_request:user_exist_email":    ErrExistEmail,
+		"bad_request:invalid_email":       ErrInvalidEmail,
+		"bad_request:invalid_roles":       ErrInvalidRoles,
 		"bad_request:user_exist_username": ErrExistUsername,
-		"bad_request:role_not_found":      ErrRoleNotFound,
+		"bad_request:user_exist_email":    ErrExistEmail,
 	}
 
 	// Parse errors
@@ -445,13 +448,14 @@ func (a *adapter) FilterUsers(ctx context.Context, authToken string, data Filter
 		result := make([]FilterUsersResult, len(response))
 		for index, item := range response {
 			result[index] = FilterUsersResult{
-				Id:       item.Id,
-				Created:  item.Created,
-				Username: item.Username,
-				Email:    item.Email,
-				Name:     item.Name,
-				Role:     FilterUsersRoleResult(item.Role),
-				Mfa:      item.Mfa,
+				Id:         item.Id,
+				Created:    item.Created,
+				Username:   item.Username,
+				Email:      item.Email,
+				Name:       item.Name,
+				Role:       FilterUsersRoleResult(item.Role),
+				Mfa:        item.Mfa,
+				SystemFlag: item.SystemFlag,
 			}
 		}
 		return result, nil
@@ -461,6 +465,59 @@ func (a *adapter) FilterUsers(ctx context.Context, authToken string, data Filter
 	errMessage := string(res.Body())
 
 	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+}
+
+func (a *adapter) UpdateUser(ctx context.Context, authToken string, id string, data UpdateUserData) error {
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Build path
+	var path strings.Builder
+	path.WriteString("/users/admin/")
+	path.WriteString(id)
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		a.usersServiceEndpoint+path.String(),
+		client.WithRequestMethod(http.MethodPatch),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.usersServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Response message
+	errMessage := string(res.Body())
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_name":        ErrInvalidName,
+		"bad_request:invalid_username":    ErrInvalidUsername,
+		"bad_request:invalid_email":       ErrInvalidEmail,
+		"bad_request:invalid_roles":       ErrInvalidRoles,
+		"bad_request:user_exist_username": ErrExistUsername,
+		"bad_request:user_exist_email":    ErrExistEmail,
+		"bad_request:user_not_found":      ErrNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[errMessage]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DeleteUser(ctx context.Context, authToken string, id uint) error {
@@ -595,6 +652,12 @@ func (a *adapter) FilterRoles(ctx context.Context, authToken string, data Filter
 }
 
 func (a *adapter) UpdateRole(ctx context.Context, authToken string, id string, data UpdateRoleData) error {
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
 	// Build path
 	var path strings.Builder
 	path.WriteString("/users/admin/roles/")
@@ -604,6 +667,7 @@ func (a *adapter) UpdateRole(ctx context.Context, authToken string, id string, d
 	res, err := a.httpClientManager.Request(
 		a.usersServiceEndpoint+path.String(),
 		client.WithRequestMethod(http.MethodPatch),
+		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
 		client.WithRequestHeaders(
 			client.NewRequestHeader("Authorization", "Bearer "+authToken),

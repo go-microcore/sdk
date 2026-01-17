@@ -17,6 +17,7 @@ var (
 	ErrRoleNotFound       = errors.New(errors.ErrBadRequest, "role_not_found")
 	ErrNotFound           = errors.New(errors.ErrBadRequest, "user_not_found")
 	ErrUserIsUsed         = errors.New(errors.ErrBadRequest, "user_is_used")
+	ErrInvalidRoles       = errors.New(errors.ErrBadRequest, "invalid_roles")
 	ErrInvalidRoleId      = errors.New(errors.ErrBadRequest, "invalid_role_id")
 	ErrInvalidRoleName    = errors.New(errors.ErrBadRequest, "invalid_role_name")
 	ErrExistRoleId        = errors.New(errors.ErrBadRequest, "role_exist_id")

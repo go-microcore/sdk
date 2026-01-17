@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/json"
-	"slices"
+	"strings"
 
 	"go.microcore.dev/framework/errors"
 	"go.microcore.dev/framework/transport/http"
@@ -10,20 +10,46 @@ import (
 	"go.microcore.dev/framework/transport/http/server"
 )
 
+var (
+	ErrAuthInsufficientPermissions = errors.New(errors.ErrForbidden, "insufficient_permissions")
+	ErrAuth2faRequired             = errors.New(errors.ErrUnauthorized, "2fa_required")
+	ErrAuthInvalidToken            = errors.New(errors.ErrUnauthorized, "invalid_token")
+)
+
+type tokenAuthorizeHttpRequest struct {
+	Path   string `json:"path"`
+	Method string `json:"method"`
+}
+
+type tokenAuthorizeHttpResponse struct {
+	Token tokenAuthorizeHttpDataResponse `json:"token"`
+	Auth  tokenAuthorizeHttpAuthResponse `json:"auth"`
+}
+type tokenAuthorizeHttpDataResponse struct {
+	Id       string   `json:"id"`
+	Device   string   `json:"device"`
+	User     uint     `json:"user"`
+	Roles    []string `json:"roles"`
+	Mfa      bool     `json:"mfa"`
+	Expires  int64    `json:"expires"`
+	Issued   int64    `json:"issued"`
+	Issuer   string   `json:"issuer"`
+	Audience []string `json:"audience"`
+}
+type tokenAuthorizeHttpAuthResponse struct {
+	Mfa bool `json:"mfa"`
+}
+
 type MiddlewareConfig struct {
 	AuthServiceEndpoint string
 	HttpClientManager   client.Manager
 }
 
-func NewMiddleware(config *MiddlewareConfig) Middleware {
+func NewMiddleware(config *MiddlewareConfig) *middleware {
 	return &middleware{
 		authServiceEndpoint: config.AuthServiceEndpoint,
 		httpClientManager:   config.HttpClientManager,
 	}
-}
-
-type Middleware interface {
-	Auth(options ...AuthOption) func(server.RequestHandler) server.RequestHandler
 }
 
 type middleware struct {
@@ -31,25 +57,14 @@ type middleware struct {
 	httpClientManager   client.Manager
 }
 
-type tokenValidateRequest struct {
-	AccessToken string `json:"access_token"`
-}
-
-type tokenValidateResult struct {
-	Id       string   `json:"id"`
-	Device   string   `json:"device"`
-	User     uint     `json:"user"`
-	Role     string   `json:"role"`
-	Mfa      bool     `json:"mfa"`
-	Expires  int64    `json:"expires"`
-	Issued   int64    `json:"issued"`
-	Issuer   string   `json:"issuer"`
-	Audience []string `json:"audience"`
-}
-
-func (m *middleware) Auth(options ...AuthOption) func(server.RequestHandler) server.RequestHandler {
+func (m *middleware) Auth() func(server.RequestHandler) server.RequestHandler {
 	return func(handler server.RequestHandler) server.RequestHandler {
 		return func(c *server.RequestContext) {
+			// Build url
+			var url strings.Builder
+			url.WriteString(m.authServiceEndpoint)
+			url.WriteString("/auth/tokens/authorize/http")
+
 			// Get auth token
 			token, err := c.GetBearerToken()
 			if err != nil {
@@ -59,21 +74,24 @@ func (m *middleware) Auth(options ...AuthOption) func(server.RequestHandler) ser
 
 			// Encode body json
 			body, err := json.Marshal(
-				tokenValidateRequest{
-					AccessToken: token,
+				tokenAuthorizeHttpRequest{
+					Path:   string(c.Path()),
+					Method: string(c.Method()),
 				},
 			)
 			if err != nil {
 				c.WriteError(errors.ErrServiceUnavailable)
-				return
 			}
 
-			// Send service request
+			// Authorize HTTP JWT token
 			res, err := m.httpClientManager.Request(
-				m.authServiceEndpoint+"/auth/token/validate",
+				url.String(),
 				client.WithRequestMethod(http.MethodPost),
-				client.WithRequestBody(body),
 				client.WithRequestContext(c.GetContext()),
+				client.WithRequestBody(body),
+				client.WithRequestHeaders(
+					client.NewRequestHeader("Authorization", "Bearer "+token),
+				),
 			)
 			if err != nil {
 				c.WriteError(errors.ErrServiceUnavailable)
@@ -84,34 +102,21 @@ func (m *middleware) Auth(options ...AuthOption) func(server.RequestHandler) ser
 			switch res.StatusCode() {
 			case 200:
 				// Parse response
-				var response tokenValidateResult
+				var response tokenAuthorizeHttpResponse
 				if err := json.Unmarshal(res.Body(), &response); err != nil {
 					c.WriteError(errors.ErrServiceUnavailable)
 					return
 				}
 
 				// Set data to ctx
-				c.SetUserValue("device", response.Device)
-				c.SetUserValue("user", response.User)
-				c.SetUserValue("role", response.Role)
-				c.SetUserValue("mfa_value", response.Mfa)
-				c.SetUserValue("mfa_validation", true)
-
-				// Apply options
-				for _, option := range options {
-					if err := option.Apply(c, &response); err != nil {
-						c.WriteError(err)
-						return
-					}
-				}
+				c.SetUserValue("device", response.Token.Device)
+				c.SetUserValue("user", response.Token.User)
+				c.SetUserValue("roles", response.Token.Roles)
+				c.SetUserValue("mfa_value", response.Token.Mfa)
+				c.SetUserValue("mfa_validation", response.Auth.Mfa)
 
 				// Check two factor
-				mfav, err := c.UserValueBool("mfa_validation")
-				if err != nil {
-					c.WriteError(err)
-					return
-				}
-				if mfav && response.Mfa {
+				if response.Auth.Mfa && response.Token.Mfa {
 					c.WriteError(ErrAuth2faRequired)
 					return
 				}
@@ -119,50 +124,11 @@ func (m *middleware) Auth(options ...AuthOption) func(server.RequestHandler) ser
 				handler(c)
 			case 400:
 				c.WriteError(ErrAuthInvalidToken)
+			case 403:
+				c.WriteError(ErrAuthInsufficientPermissions)
 			default:
 				c.WriteError(errors.ErrServiceUnavailable)
 			}
 		}
 	}
 }
-
-type AuthOption interface {
-	Apply(*server.RequestContext, *tokenValidateResult) error
-}
-
-// Auth options
-
-// Check role permissions
-type authRolesOption struct {
-	roles []string
-}
-
-func (h authRolesOption) Apply(_ *server.RequestContext, r *tokenValidateResult) error {
-	if len(h.roles) > 0 && !slices.Contains(h.roles, r.Role) {
-		return ErrAuthInsufficientPermissions
-	}
-	return nil
-}
-
-func WithAuthRolesOption(roles ...string) authRolesOption {
-	return authRolesOption{roles}
-}
-
-// Without MFA checking
-type authMfaOption struct {
-}
-
-func (h authMfaOption) Apply(c *server.RequestContext, _ *tokenValidateResult) error {
-	c.SetUserValue("mfa_validation", false)
-	return nil
-}
-
-func WithoutAuthMfaOption() authMfaOption {
-	return authMfaOption{}
-}
-
-var (
-	ErrAuthInsufficientPermissions = errors.New(errors.ErrForbidden, "insufficient_role_permissions")
-	ErrAuth2faRequired             = errors.New(errors.ErrUnauthorized, "2fa_required")
-	ErrAuthInvalidToken            = errors.New(errors.ErrUnauthorized, "invalid_token")
-)

@@ -28,7 +28,14 @@ type adapter struct {
 	notificationsServiceEndpoint string
 }
 
-func (a *adapter) AdminEmailCreate(ctx context.Context, authToken string, data CreateEmailData) (*CreateEmailResult, error) {
+// Emails
+
+func (a *adapter) SendCustomEmail(ctx context.Context, authToken string, data SendCustomEmailData) (*SendCustomEmailResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/send/custom")
+	
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -37,235 +44,7 @@ func (a *adapter) AdminEmailCreate(ctx context.Context, authToken string, data C
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 201 {
-		var response CreateEmailResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":       ErrEmailInvalidName,
-		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
-		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
-		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
-		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
-		"bad_request:invalid_html":       ErrEmailInvalidHtml,
-		"bad_request:invalid_text":       ErrEmailInvalidText,
-		"bad_request:email_exist":        ErrEmailExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) AdminEmailFilter(ctx context.Context, authToken string, data FilterEmailsData) ([]FilterEmailsResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/filter",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 200 {
-		var response []FilterEmailsResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return response, nil
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), string(res.Body()))
-}
-
-func (a *adapter) AdminEmailUpdate(ctx context.Context, authToken string, id uint, data UpdateEmailData) error {
-	// Build path
-	var path strings.Builder
-	path.WriteString("/notifications/admin/email/")
-	path.WriteString(strconv.FormatUint(uint64(id), 10))
-
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+path.String(),
-		client.WithRequestMethod(http.MethodPatch),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 204 {
-		return nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":       ErrEmailInvalidName,
-		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
-		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
-		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
-		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
-		"bad_request:invalid_html":       ErrEmailInvalidHtml,
-		"bad_request:invalid_text":       ErrEmailInvalidText,
-		"bad_request:email_not_found":    ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) AdminEmailDelete(ctx context.Context, authToken string, id uint) error {
-	// Build path
-	var path strings.Builder
-	path.WriteString("/notifications/admin/email/")
-	path.WriteString(strconv.FormatUint(uint64(id), 10))
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+path.String(),
-		client.WithRequestMethod(http.MethodDelete),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 204 {
-		return nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:email_not_found": ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) AdminEmailSend(ctx context.Context, authToken string, data SendEmailData) (*SendEmailResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/send/",
-		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(body),
-		client.WithRequestContext(ctx),
-		client.WithRequestHeaders(
-			client.NewRequestHeader("Authorization", "Bearer "+authToken),
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
-	}
-
-	// Check success status code
-	if res.StatusCode() == 201 {
-		var response SendEmailResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
-			return nil, fmt.Errorf("error parsing response body: %v", err)
-		}
-		return &response, nil
-	}
-
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":     ErrEmailInvalidName,
-		"bad_request:invalid_to_email": ErrEmailInvalidToEmail,
-		"bad_request:email_not_found":  ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
-}
-
-func (a *adapter) AdminEmailSendCustom(ctx context.Context, authToken string, data SendCustomEmailData) (*SendCustomEmailResult, error) {
-	// Encode body json
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing request body: %v", err)
-	}
-
-	// Send service request
-	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/send/custom",
+		url.String(),
 		client.WithRequestMethod(http.MethodPost),
 		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
@@ -286,9 +65,6 @@ func (a *adapter) AdminEmailSendCustom(ctx context.Context, authToken string, da
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":       ErrEmailInvalidName,
@@ -301,14 +77,19 @@ func (a *adapter) AdminEmailSendCustom(ctx context.Context, authToken string, da
 	}
 
 	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
+	if err, ok := errMap[string(res.Body())]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
-func (a *adapter) AdminEmailLogFilter(ctx context.Context, authToken string, data FilterEmailLogsData) ([]FilterEmailLogsResult, error) {
+func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmailData) (*SendEmailResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/send/")
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -317,7 +98,95 @@ func (a *adapter) AdminEmailLogFilter(ctx context.Context, authToken string, dat
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/log/filter",
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 201 {
+		var response SendEmailResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_name":     ErrEmailInvalidName,
+		"bad_request:invalid_to_email": ErrEmailInvalidToEmail,
+		"bad_request:email_not_found":  ErrEmailNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) FilterEmails(ctx context.Context, authToken string, data FilterEmailsData) ([]FilterEmailsResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/filter")
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 200 {
+		var response []FilterEmailsResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return response, nil
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data FilterEmailLogsData) ([]FilterEmailLogsResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/log")
+	
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
 		client.WithRequestMethod(http.MethodPost),
 		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
@@ -338,10 +207,105 @@ func (a *adapter) AdminEmailLogFilter(ctx context.Context, authToken string, dat
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), string(res.Body()))
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
-func (a *adapter) AdminEmailFolderCreate(ctx context.Context, authToken string, data CreateEmailFolderData) (*CreateEmailFolderResult, error) {
+func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, data UpdateEmailData) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
+
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPatch),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_name":       ErrEmailInvalidName,
+		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
+		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
+		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
+		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
+		"bad_request:invalid_html":       ErrEmailInvalidHtml,
+		"bad_request:invalid_text":       ErrEmailInvalidText,
+		"bad_request:email_not_found":    ErrEmailNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) DeleteEmail(ctx context.Context, authToken string, id uint) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodDelete),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 204 {
+		return nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:email_not_found": ErrEmailNotFound,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return err
+	}
+
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) CreateEmail(ctx context.Context, authToken string, data CreateEmailData) (*CreateEmailResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/emails/")
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -350,7 +314,7 @@ func (a *adapter) AdminEmailFolderCreate(ctx context.Context, authToken string, 
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/folder/",
+		url.String(),
 		client.WithRequestMethod(http.MethodPost),
 		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
@@ -364,32 +328,41 @@ func (a *adapter) AdminEmailFolderCreate(ctx context.Context, authToken string, 
 
 	// Check success status code
 	if res.StatusCode() == 201 {
-		var response CreateEmailFolderResult
+		var response CreateEmailResult
 		if err := json.Unmarshal(res.Body(), &response); err != nil {
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
 	// Errors map
 	var errMap = map[string]error{
-		"bad_request:invalid_parent": ErrFolderInvalidParent,
-		"bad_request:invalid_name":   ErrFolderInvalidName,
-		"bad_request:folder_exist":   ErrFolderExist,
+		"bad_request:invalid_name":       ErrEmailInvalidName,
+		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
+		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
+		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
+		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
+		"bad_request:invalid_html":       ErrEmailInvalidHtml,
+		"bad_request:invalid_text":       ErrEmailInvalidText,
+		"bad_request:email_exist":        ErrEmailExist,
 	}
 
 	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
+	if err, ok := errMap[string(res.Body())]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
-func (a *adapter) AdminEmailFolderFilter(ctx context.Context, authToken string, data FilterEmailFoldersData) ([]FilterEmailFoldersResult, error) {
+// Folders
+
+func (a *adapter) FilterFolders(ctx context.Context, authToken string, data FilterEmailFoldersData) ([]FilterEmailFoldersResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/folders/filter")
+	
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -398,7 +371,7 @@ func (a *adapter) AdminEmailFolderFilter(ctx context.Context, authToken string, 
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+"/notifications/admin/email/folder/filter",
+		url.String(),
 		client.WithRequestMethod(http.MethodPost),
 		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
@@ -419,14 +392,15 @@ func (a *adapter) AdminEmailFolderFilter(ctx context.Context, authToken string, 
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), string(res.Body()))
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
-func (a *adapter) AdminEmailFolderUpdate(ctx context.Context, authToken string, id uint, data UpdateEmailFolderData) error {
-	// Build path
-	var path strings.Builder
-	path.WriteString("/admin/notifications/emails/folders/")
-	path.WriteString(strconv.FormatUint(uint64(id), 10))
+func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, data UpdateEmailFolderData) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/folders/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
 
 	// Encode body json
 	body, err := json.Marshal(data)
@@ -436,7 +410,7 @@ func (a *adapter) AdminEmailFolderUpdate(ctx context.Context, authToken string, 
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+path.String(),
+		url.String(),
 		client.WithRequestMethod(http.MethodPatch),
 		client.WithRequestBody(body),
 		client.WithRequestContext(ctx),
@@ -453,9 +427,6 @@ func (a *adapter) AdminEmailFolderUpdate(ctx context.Context, authToken string, 
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":     ErrFolderInvalidName,
@@ -463,22 +434,23 @@ func (a *adapter) AdminEmailFolderUpdate(ctx context.Context, authToken string, 
 	}
 
 	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
+	if err, ok := errMap[string(res.Body())]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }
 
-func (a *adapter) AdminEmailFolderDelete(ctx context.Context, authToken string, id uint) error {
-	// Build path
-	var path strings.Builder
-	path.WriteString("/notifications/admin/email/folder/")
-	path.WriteString(strconv.FormatUint(uint64(id), 10))
+func (a *adapter) DeleteFolder(ctx context.Context, authToken string, id uint) error {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/folders/")
+	url.WriteString(strconv.FormatUint(uint64(id), 10))
 
 	// Send service request
 	res, err := a.httpClientManager.Request(
-		a.notificationsServiceEndpoint+path.String(),
+		url.String(),
 		client.WithRequestMethod(http.MethodDelete),
 		client.WithRequestContext(ctx),
 		client.WithRequestHeaders(
@@ -494,18 +466,65 @@ func (a *adapter) AdminEmailFolderDelete(ctx context.Context, authToken string, 
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:folder_not_found": ErrFolderNotFound,
 	}
 
 	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
+	if err, ok := errMap[string(res.Body())]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+}
+
+func (a *adapter) CreateFolder(ctx context.Context, authToken string, data CreateEmailFolderData) (*CreateEmailFolderResult, error) {
+	// Build url
+	var url strings.Builder
+	url.WriteString(a.notificationsServiceEndpoint)
+	url.WriteString("/notifications/folders/")
+	
+	// Encode body json
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	// Send service request
+	res, err := a.httpClientManager.Request(
+		url.String(),
+		client.WithRequestMethod(http.MethodPost),
+		client.WithRequestBody(body),
+		client.WithRequestContext(ctx),
+		client.WithRequestHeaders(
+			client.NewRequestHeader("Authorization", "Bearer "+authToken),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("service %s unavailable: %v", a.notificationsServiceEndpoint, err)
+	}
+
+	// Check success status code
+	if res.StatusCode() == 201 {
+		var response CreateEmailFolderResult
+		if err := json.Unmarshal(res.Body(), &response); err != nil {
+			return nil, fmt.Errorf("error parsing response body: %v", err)
+		}
+		return &response, nil
+	}
+
+	// Errors map
+	var errMap = map[string]error{
+		"bad_request:invalid_parent": ErrFolderInvalidParent,
+		"bad_request:invalid_name":   ErrFolderInvalidName,
+		"bad_request:folder_exist":   ErrFolderExist,
+	}
+
+	// Parse errors
+	if err, ok := errMap[string(res.Body())]; ok {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
 }

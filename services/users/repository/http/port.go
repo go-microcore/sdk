@@ -14,6 +14,7 @@ type Interface interface {
 	TwoFADisable(ctx context.Context, authToken string, data TwoFADisableData) error
 	CreateUser(ctx context.Context, authToken string, data CreateUserData) (*CreateUserResult, error)
 	FilterUsers(ctx context.Context, authToken string, data FilterUsersData) ([]FilterUsersResult, error)
+	UpdateUser(ctx context.Context, authToken string, id string, data UpdateUserData) error
 	DeleteUser(ctx context.Context, authToken string, id uint) error
 	CreateRole(ctx context.Context, authToken string, data CreateRoleData) (*CreateRoleResult, error)
 	FilterRoles(ctx context.Context, authToken string, data FilterRolesData) ([]FilterRolesResult, error)

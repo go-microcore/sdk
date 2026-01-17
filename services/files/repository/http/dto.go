@@ -1,18 +1,8 @@
 package adapter
 
-import (
-	"mime/multipart"
-)
+import "io"
 
 // Data
-
-type CreateDirData struct {
-	Path string `json:"path"`
-}
-
-type DeleteDirData struct {
-	Path string `json:"path"`
-}
 
 type RenameDirData struct {
 	OldPath string `json:"old_path"`
@@ -21,15 +11,8 @@ type RenameDirData struct {
 
 type CreateFileData struct {
 	Path string
-	File *multipart.FileHeader
-}
-
-type GetFilesData struct {
-	Path string `json:"path"`
-}
-
-type DeleteFileData struct {
-	Path string `json:"path"`
+	File io.Reader
+	Name string
 }
 
 type RenameFileData struct {
@@ -44,4 +27,8 @@ type FileResult struct {
 	IsDir    bool    `json:"is_dir"`
 	Size     *int64  `json:"size"`
 	MimeType *string `json:"mime_type"`
+}
+
+type DownloadFileResult struct {
+	Token string `json:"token"`
 }

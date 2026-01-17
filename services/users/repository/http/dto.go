@@ -51,12 +51,13 @@ type TwoFADisableData struct {
 }
 
 type CreateUserData struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
-	Role     string `json:"role"`
-	Notify   bool   `json:"notify"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Name       string `json:"name"`
+	Role       string `json:"role"`
+	Notify     bool   `json:"notify"`
+	SystemFlag bool   `json:"system_flag"`
 }
 
 type FilterUsersData struct {
@@ -66,9 +67,18 @@ type FilterUsersData struct {
 	Role     *[]string `json:"role"`
 }
 
+type UpdateUserData struct {
+	Name       string `json:"name"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Role       string `json:"role"`
+	SystemFlag bool   `json:"system_flag"`
+}
+
 type CreateRoleData struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	SystemFlag bool   `json:"system_flag"`
 }
 
 type FilterRolesData struct {
@@ -77,7 +87,9 @@ type FilterRolesData struct {
 }
 
 type UpdateRoleData struct {
-	Name string `json:"name"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	SystemFlag bool   `json:"system_flag"`
 }
 
 // Results
@@ -89,34 +101,38 @@ type SigninResult struct {
 }
 
 type SignupResult struct {
-	Id       uint
-	Created  time.Time
-	Username string
-	Email    string
-	Name     string
-	Role     SignupRoleResult
-	Mfa      bool
+	Id         uint
+	Created    time.Time
+	Username   string
+	Email      string
+	Name       string
+	Role       SignupRoleResult
+	Mfa        bool
+	SystemFlag bool
 }
 type SignupRoleResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }
 
 type ProfileResult struct {
-	Id       uint
-	Created  time.Time
-	Username string
-	Email    string
-	Name     string
-	Role     ProfileRoleResult
-	Mfa      bool
-	Device   string
+	Id         uint
+	Created    time.Time
+	Username   string
+	Email      string
+	Name       string
+	Role       ProfileRoleResult
+	Mfa        bool
+	SystemFlag bool
+	Device     string
 }
 type ProfileRoleResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }
 
 type TwoFAValidateResult struct {
@@ -130,43 +146,49 @@ type TwoFASettingsResult struct {
 }
 
 type CreateUserResult struct {
-	Id       uint
-	Created  time.Time
-	Username string
-	Email    string
-	Name     string
-	Role     CreateUserRoleResult
-	Mfa      bool
+	Id         uint
+	Created    time.Time
+	Username   string
+	Email      string
+	Name       string
+	Role       CreateUserRoleResult
+	Mfa        bool
+	SystemFlag bool
 }
 type CreateUserRoleResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }
 
 type FilterUsersResult struct {
-	Id       uint
-	Created  time.Time
-	Username string
-	Email    string
-	Name     string
-	Role     FilterUsersRoleResult
-	Mfa      bool
+	Id         uint
+	Created    time.Time
+	Username   string
+	Email      string
+	Name       string
+	Role       FilterUsersRoleResult
+	Mfa        bool
+	SystemFlag bool
 }
 type FilterUsersRoleResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }
 
 type CreateRoleResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }
 
 type FilterRolesResult struct {
-	Id      string
-	Name    string
-	Created time.Time
+	Id         string
+	Name       string
+	SystemFlag bool
+	Created    time.Time
 }

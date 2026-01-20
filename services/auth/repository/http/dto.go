@@ -170,9 +170,10 @@ type FilterHttpRulesResult struct {
 }
 
 type AuthResult struct {
-	Access  string `json:"access"`
-	Refresh string `json:"refresh"`
-	Mfa     bool   `json:"mfa"`
+	Access    string `json:"access"`
+	Refresh   string `json:"refresh"`
+	Mfa       bool   `json:"mfa"`
+	NewDevice bool   `json:"new_device"`
 }
 
 type Auth2faResult struct {

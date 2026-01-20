@@ -569,13 +569,13 @@ func (a *adapter) Auth(ctx context.Context, data AuthData) (*AuthResult, error) 
 	url.WriteString("/auth/tokens/")
 
 	// Encode body json
-	body, err := json.Marshal(data)
+	requestbody, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing request body: %v", err)
 	}
 
-	// Encode body
-	encBody, err := a.encrypt(body)
+	// Encode request body
+	encRequestBody, err := a.encrypt(requestbody)
 	if err != nil {
 		return nil, fmt.Errorf("error encode body: %v", err)
 	}
@@ -584,24 +584,30 @@ func (a *adapter) Auth(ctx context.Context, data AuthData) (*AuthResult, error) 
 	res, err := a.httpClientManager.Request(
 		url.String(),
 		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(encBody),
+		client.WithRequestBody(encRequestBody),
 		client.WithRequestContext(ctx),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
 	}
 
+	// Decode response body
+	decResponseBody, err := a.decrypt(res.Body())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt auth service response: %v", err)
+	}
+
 	// Check success status code
 	if res.StatusCode() == 200 {
 		var response AuthResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
+		if err := json.Unmarshal(decResponseBody, &response); err != nil {
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		return &response, nil
 	}
 
 	// Response message
-	errMessage := string(res.Body())
+	errMessage := string(decResponseBody)
 
 	// Errors map
 	var errMap = map[string]error{
@@ -623,13 +629,13 @@ func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult
 	url.WriteString("/auth/tokens/2fa")
 
 	// Encode body json
-	body, err := json.Marshal(data)
+	requestbody, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing request body: %v", err)
 	}
 
-	// Encode body
-	encBody, err := a.encrypt(body)
+	// Encode request body
+	encRequestBody, err := a.encrypt(requestbody)
 	if err != nil {
 		return nil, fmt.Errorf("error encode body: %v", err)
 	}
@@ -638,24 +644,30 @@ func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult
 	res, err := a.httpClientManager.Request(
 		url.String(),
 		client.WithRequestMethod(http.MethodPost),
-		client.WithRequestBody(encBody),
+		client.WithRequestBody(encRequestBody),
 		client.WithRequestContext(ctx),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("service %s unavailable: %v", a.authServiceEndpoint, err)
 	}
 
+	// Decode response body
+	decResponseBody, err := a.decrypt(res.Body())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt auth service response: %v", err)
+	}
+
 	// Check success status code
 	if res.StatusCode() == 200 {
 		var response Auth2faResult
-		if err := json.Unmarshal(res.Body(), &response); err != nil {
+		if err := json.Unmarshal(decResponseBody, &response); err != nil {
 			return nil, fmt.Errorf("error parsing response body: %v", err)
 		}
 		return &response, nil
 	}
 
 	// Response message
-	errMessage := string(res.Body())
+	errMessage := string(decResponseBody)
 
 	// Errors map
 	var errMap = map[string]error{
@@ -955,6 +967,7 @@ func (a *adapter) DeleteStaticAccessToken(ctx context.Context, authToken string,
 	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
+// Helper for encrypt auth request data
 func (a *adapter) encrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher([]byte(a.authKey))
 	if err != nil {
@@ -973,4 +986,30 @@ func (a *adapter) encrypt(data []byte) ([]byte, error) {
 
 	ciphertext := aesGCM.Seal(nonce, nonce, data, nil)
 	return ciphertext, nil
+}
+
+// Helper for decrypt auth response data
+func (a *adapter) decrypt(data []byte) ([]byte, error) {
+	block, err := aes.NewCipher([]byte(a.authKey))
+	if err != nil {
+		return nil, err
+	}
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonceSize := aesGCM.NonceSize()
+	if len(data) < nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, data := data[:nonceSize], data[nonceSize:]
+	res, err := aesGCM.Open(nil, nonce, data, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

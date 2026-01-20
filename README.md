@@ -7,11 +7,13 @@
 |_|  |_|___\___|_|_\\___/ \___\___/|_|_\___|
 ```
 
-A high-level software development toolkit based on the Microcore Framework for building highly efficient and fault-tolerant applications.
+A high-level software development toolkit based on the Microcore Framework for building microservices in Go.
+
+[![Go Reference](https://pkg.go.dev/badge/go.microcore.dev/sdk.svg)](https://pkg.go.dev/go.microcore.dev/sdk)
 
 ## Install
 ```bash
-go get go.microcore.dev/framework/sdk
+go get go.microcore.dev/sdk
 ```
 
 ## Docs
@@ -22,4 +24,4 @@ go get go.microcore.dev/framework/sdk
 
 This project is licensed under the terms of the [MIT License](LICENSE).
 
-Copyright © 2025 Microcore
+Copyright © 2026 Microcore

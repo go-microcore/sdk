@@ -65,6 +65,9 @@ func (a *adapter) SendCustomEmail(ctx context.Context, authToken string, data Se
 		return &response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":       ErrEmailInvalidName,
@@ -77,11 +80,11 @@ func (a *adapter) SendCustomEmail(ctx context.Context, authToken string, data Se
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmailData) (*SendEmailResult, error) {
@@ -119,6 +122,9 @@ func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmai
 		return &response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":     ErrEmailInvalidName,
@@ -127,11 +133,11 @@ func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmai
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) FilterEmails(ctx context.Context, authToken string, data FilterEmailsData) ([]FilterEmailsResult, error) {
@@ -169,7 +175,10 @@ func (a *adapter) FilterEmails(ctx context.Context, authToken string, data Filte
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	// Response message
+	errMessage := string(res.Body())
+
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data FilterEmailLogsData) ([]FilterEmailLogsResult, error) {
@@ -207,7 +216,10 @@ func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data Fi
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	// Response message
+	errMessage := string(res.Body())
+
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, data UpdateEmailData) error {
@@ -242,6 +254,9 @@ func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, da
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":       ErrEmailInvalidName,
@@ -255,11 +270,11 @@ func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, da
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DeleteEmail(ctx context.Context, authToken string, id uint) error {
@@ -287,17 +302,20 @@ func (a *adapter) DeleteEmail(ctx context.Context, authToken string, id uint) er
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:email_not_found": ErrEmailNotFound,
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) CreateEmail(ctx context.Context, authToken string, data CreateEmailData) (*CreateEmailResult, error) {
@@ -335,6 +353,9 @@ func (a *adapter) CreateEmail(ctx context.Context, authToken string, data Create
 		return &response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":       ErrEmailInvalidName,
@@ -348,11 +369,11 @@ func (a *adapter) CreateEmail(ctx context.Context, authToken string, data Create
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 // Folders
@@ -392,7 +413,10 @@ func (a *adapter) FilterFolders(ctx context.Context, authToken string, data Filt
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	// Response message
+	errMessage := string(res.Body())
+
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, data UpdateEmailFolderData) error {
@@ -427,6 +451,9 @@ func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, d
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_name":     ErrFolderInvalidName,
@@ -434,11 +461,11 @@ func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, d
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DeleteFolder(ctx context.Context, authToken string, id uint) error {
@@ -466,17 +493,20 @@ func (a *adapter) DeleteFolder(ctx context.Context, authToken string, id uint) e
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:folder_not_found": ErrFolderNotFound,
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) CreateFolder(ctx context.Context, authToken string, data CreateEmailFolderData) (*CreateEmailFolderResult, error) {
@@ -514,6 +544,9 @@ func (a *adapter) CreateFolder(ctx context.Context, authToken string, data Creat
 		return &response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_parent": ErrFolderInvalidParent,
@@ -522,9 +555,9 @@ func (a *adapter) CreateFolder(ctx context.Context, authToken string, data Creat
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }

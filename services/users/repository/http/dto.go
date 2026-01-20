@@ -4,13 +4,29 @@ import "time"
 
 // Data
 
+type TwoFASettingsData struct {
+	Password string `json:"password"`
+}
+
+type TwoFAEnableData struct {
+	Token string `json:"token"`
+}
+
+type TwoFADisableData struct {
+	Password string `json:"password"`
+	Token    string `json:"token"`
+}
+
+type TwoFAValidateData struct {
+	Token string `json:"token"`
+}
+
 type SigninData struct {
 	Login    string          `json:"login"`
 	Password string          `json:"password"`
 	Device   string          `json:"device"`
 	Metadata *SigninMetadata `json:"metadata"`
 }
-
 type SigninMetadata struct {
 	Location       string `json:"location"`
 	Ip             string `json:"ip"`
@@ -33,162 +49,93 @@ type SignupData struct {
 	Name     string `json:"name"`
 }
 
-type TwoFAValidateData struct {
-	Token string `json:"token"`
-}
-
-type TwoFASettingsData struct {
-	Password string `json:"password"`
-}
-
-type TwoFAEnableData struct {
-	Token string `json:"token"`
-}
-
-type TwoFADisableData struct {
-	Password string `json:"password"`
-	Token    string `json:"token"`
-}
-
-type CreateUserData struct {
-	Username   string `json:"username"`
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	Name       string `json:"name"`
-	Role       string `json:"role"`
-	Notify     bool   `json:"notify"`
-	SystemFlag bool   `json:"system_flag"`
-}
-
 type FilterUsersData struct {
-	Id       *[]uint   `json:"id"`
-	Username *[]string `json:"username"`
-	Email    *[]string `json:"email"`
-	Role     *[]string `json:"role"`
+	Id         *[]uint   `json:"id"`
+	Username   *[]string `json:"username"`
+	Email      *[]string `json:"email"`
+	Roles      *[]string `json:"roles"`
+	OtpSecret  *[]string `json:"otp_secret"`
+	Mfa        *bool     `json:"mfa"`
+	SystemFlag *bool     `json:"system_flag"`
 }
 
 type UpdateUserData struct {
-	Name       string `json:"name"`
-	Username   string `json:"username"`
-	Email      string `json:"email"`
-	Role       string `json:"role"`
-	SystemFlag bool   `json:"system_flag"`
+	Name       string   `json:"name"`
+	Username   string   `json:"username"`
+	Email      string   `json:"email"`
+	Roles      []string `json:"roles"`
+	SystemFlag bool     `json:"system_flag"`
 }
 
-type CreateRoleData struct {
-	Id         string `json:"id"`
-	Name       string `json:"name"`
-	SystemFlag bool   `json:"system_flag"`
-}
-
-type FilterRolesData struct {
-	Id   *[]string `json:"id"`
-	Name *[]string `json:"name"`
-}
-
-type UpdateRoleData struct {
-	Id         string `json:"id"`
-	Name       string `json:"name"`
-	SystemFlag bool   `json:"system_flag"`
+type CreateUserData struct {
+	Username   string   `json:"username"`
+	Email      string   `json:"email"`
+	Password   string   `json:"password"`
+	Name       string   `json:"name"`
+	Roles      []string `json:"roles"`
+	Notify     bool     `json:"notify"`
+	SystemFlag bool     `json:"system_flag"`
 }
 
 // Results
 
-type SigninResult struct {
-	Access  string
-	Refresh string
-	Mfa     bool
-}
-
-type SignupResult struct {
-	Id         uint
-	Created    time.Time
-	Username   string
-	Email      string
-	Name       string
-	Role       SignupRoleResult
-	Mfa        bool
-	SystemFlag bool
-}
-type SignupRoleResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
-}
-
-type ProfileResult struct {
-	Id         uint
-	Created    time.Time
-	Username   string
-	Email      string
-	Name       string
-	Role       ProfileRoleResult
-	Mfa        bool
-	SystemFlag bool
-	Device     string
-}
-type ProfileRoleResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
+type TwoFASettingsResult struct {
+	Secret string `json:"secret"`
+	Url    string `json:"url"`
 }
 
 type TwoFAValidateResult struct {
-	Access  string
-	Refresh string
+	Access  string `json:"access_token"`
+	Refresh string `json:"refresh_token"`
 }
 
-type TwoFASettingsResult struct {
-	Secret string
-	Url    string
+type SigninResult struct {
+	Access  string `json:"access_token"`
+	Refresh string `json:"refresh_token"`
+	Mfa     bool   `json:"mfa_required"`
 }
 
-type CreateUserResult struct {
-	Id         uint
-	Created    time.Time
-	Username   string
-	Email      string
-	Name       string
-	Role       CreateUserRoleResult
-	Mfa        bool
-	SystemFlag bool
+type SignupResult struct {
+	Id         uint      `json:"id"`
+	Created    time.Time `json:"created"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	Roles      []string  `json:"roles"`
+	Mfa        bool      `json:"mfa"`
+	SystemFlag bool      `json:"system_flag"`
 }
-type CreateUserRoleResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
+
+type ProfileResult struct {
+	Id         uint      `json:"id"`
+	Created    time.Time `json:"created"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	Roles      []string  `json:"roles"`
+	Mfa        bool      `json:"mfa"`
+	SystemFlag bool      `json:"system_flag"`
+	Device     string    `json:"device"`
 }
 
 type FilterUsersResult struct {
-	Id         uint
-	Created    time.Time
-	Username   string
-	Email      string
-	Name       string
-	Role       FilterUsersRoleResult
-	Mfa        bool
-	SystemFlag bool
-}
-type FilterUsersRoleResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
+	Id         uint      `json:"id"`
+	Created    time.Time `json:"created"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	Roles      []string  `json:"roles"`
+	Mfa        bool      `json:"mfa"`
+	SystemFlag bool      `json:"system_flag"`
 }
 
-type CreateRoleResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
-}
-
-type FilterRolesResult struct {
-	Id         string
-	Name       string
-	SystemFlag bool
-	Created    time.Time
+type CreateUserResult struct {
+	Id         uint      `json:"id"`
+	Created    time.Time `json:"created"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	Roles      []string  `json:"roles"`
+	Mfa        bool      `json:"mfa"`
+	SystemFlag bool      `json:"system_flag"`
 }

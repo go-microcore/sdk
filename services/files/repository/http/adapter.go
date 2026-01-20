@@ -58,6 +58,9 @@ func (a *adapter) CreateDir(ctx context.Context, authToken string, path string) 
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_path": ErrDirInvalidPath,
@@ -65,11 +68,11 @@ func (a *adapter) CreateDir(ctx context.Context, authToken string, path string) 
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) RenameDir(ctx context.Context, authToken string, data RenameDirData) error {
@@ -103,6 +106,9 @@ func (a *adapter) RenameDir(ctx context.Context, authToken string, data RenameDi
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_old_path":  ErrDirInvalidOldPath,
@@ -112,11 +118,11 @@ func (a *adapter) RenameDir(ctx context.Context, authToken string, data RenameDi
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DeleteDir(ctx context.Context, authToken string, path string) error {
@@ -144,6 +150,9 @@ func (a *adapter) DeleteDir(ctx context.Context, authToken string, path string) 
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_path":  ErrDirInvalidPath,
@@ -151,11 +160,11 @@ func (a *adapter) DeleteDir(ctx context.Context, authToken string, path string) 
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 // Files
@@ -196,17 +205,20 @@ func (a *adapter) StreamFile(ctx context.Context, token string) ([]byte, error) 
 		return res.Body(), nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_token": ErrFileInvalidToken,
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DownloadFile(ctx context.Context, authToken string, path string) (*DownloadFileResult, error) {
@@ -238,6 +250,9 @@ func (a *adapter) DownloadFile(ctx context.Context, authToken string, path strin
 		return &response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_path":   ErrDirInvalidPath,
@@ -245,11 +260,11 @@ func (a *adapter) DownloadFile(ctx context.Context, authToken string, path strin
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) ListFiles(ctx context.Context, authToken string, path string) ([]FileResult, error) {
@@ -281,17 +296,20 @@ func (a *adapter) ListFiles(ctx context.Context, authToken string, path string) 
 		return response, nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_path": ErrDirInvalidPath,
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) CreateFile(ctx context.Context, authToken string, data CreateFileData) error {
@@ -341,6 +359,9 @@ func (a *adapter) CreateFile(ctx context.Context, authToken string, data CreateF
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:dir_not_found": ErrDirNotFound,
@@ -348,11 +369,11 @@ func (a *adapter) CreateFile(ctx context.Context, authToken string, data CreateF
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) RenameFile(ctx context.Context, authToken string, data RenameFileData) error {
@@ -386,6 +407,9 @@ func (a *adapter) RenameFile(ctx context.Context, authToken string, data RenameF
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_old_path":   ErrDirInvalidOldPath,
@@ -395,11 +419,11 @@ func (a *adapter) RenameFile(ctx context.Context, authToken string, data RenameF
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }
 
 func (a *adapter) DeleteFile(ctx context.Context, authToken string, path string) error {
@@ -427,6 +451,9 @@ func (a *adapter) DeleteFile(ctx context.Context, authToken string, path string)
 		return nil
 	}
 
+	// Response message
+	errMessage := string(res.Body())
+
 	// Errors map
 	var errMap = map[string]error{
 		"bad_request:invalid_path":   ErrDirInvalidPath,
@@ -434,9 +461,9 @@ func (a *adapter) DeleteFile(ctx context.Context, authToken string, path string)
 	}
 
 	// Parse errors
-	if err, ok := errMap[string(res.Body())]; ok {
+	if err, ok := errMap[errMessage]; ok {
 		return err
 	}
 
-	return fmt.Errorf("unexpected response: status code: %d", res.StatusCode())
+	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
 }

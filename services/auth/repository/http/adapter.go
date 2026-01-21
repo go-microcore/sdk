@@ -19,21 +19,29 @@ import (
 type Config struct {
 	HttpClientManager   client.Manager
 	AuthServiceEndpoint string
-	AuthKey             string
+	AuthKey             []byte
 }
 
-func New(config *Config) Interface {
+func New(config *Config) (Interface, error) {
+	// Check auth key len
+	if len(config.AuthKey) < AuthKeyMinLen {
+		return nil, fmt.Errorf(
+			"auth key too short: must be at least %d bytes",
+			AuthKeyMinLen,
+		)
+	}
+
 	return &adapter{
 		config.HttpClientManager,
 		config.AuthServiceEndpoint,
 		config.AuthKey,
-	}
+	}, nil
 }
 
 type adapter struct {
 	httpClientManager   client.Manager
 	authServiceEndpoint string
-	authKey             string
+	authKey             []byte
 }
 
 // Devices
@@ -969,7 +977,7 @@ func (a *adapter) DeleteStaticAccessToken(ctx context.Context, authToken string,
 
 // Helper for encrypt auth request data
 func (a *adapter) encrypt(data []byte) ([]byte, error) {
-	block, err := aes.NewCipher([]byte(a.authKey))
+	block, err := aes.NewCipher(a.authKey)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +998,7 @@ func (a *adapter) encrypt(data []byte) ([]byte, error) {
 
 // Helper for decrypt auth response data
 func (a *adapter) decrypt(data []byte) ([]byte, error) {
-	block, err := aes.NewCipher([]byte(a.authKey))
+	block, err := aes.NewCipher(a.authKey)
 	if err != nil {
 		return nil, err
 	}

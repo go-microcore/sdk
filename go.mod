@@ -2,7 +2,7 @@ module go.microcore.dev/sdk
 
 go 1.24.0
 
-require go.microcore.dev/framework v0.7.0
+require go.microcore.dev/framework v0.8.0
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

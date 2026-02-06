@@ -57,78 +57,77 @@ type middleware struct {
 	httpClientManager   client.Manager
 }
 
-func (m *middleware) Auth() func(server.RequestHandler) server.RequestHandler {
-	return func(handler server.RequestHandler) server.RequestHandler {
-		return func(c *server.RequestContext) {
-			// Build url
-			var url strings.Builder
-			url.WriteString(m.authServiceEndpoint)
-			url.WriteString("/auth/tokens/authorize/http")
+func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
+	return func(c *server.RequestContext) {
+		// Build url
+		var url strings.Builder
+		url.WriteString(m.authServiceEndpoint)
+		url.WriteString("/auth/tokens/authorize/http")
 
-			// Get auth token
-			token, err := c.GetBearerToken()
-			if err != nil {
-				c.WriteError(ErrAuthInvalidToken)
+		// Get auth token
+		token, err := c.GetBearerToken()
+		if err != nil {
+			c.WriteError(ErrAuthInvalidToken)
+			return
+		}
+
+		// Encode body json
+		body, err := json.Marshal(
+			tokenAuthorizeHttpRequest{
+				Path:   string(c.Path()),
+				Method: string(c.Method()),
+			},
+		)
+		if err != nil {
+			c.WriteError(err)
+			return
+		}
+
+		// Authorize HTTP JWT token
+		res, err := m.httpClientManager.Request(
+			url.String(),
+			client.WithRequestMethod(http.MethodPost),
+			client.WithRequestContext(c.GetContext()),
+			client.WithRequestBody(body),
+			client.WithRequestHeaders(
+				client.NewRequestHeader("Authorization", "Bearer "+token),
+			),
+		)
+		if err != nil {
+			c.WriteError(err)
+			return
+		}
+
+		// Check status code
+		switch res.StatusCode() {
+		case 200:
+			// Parse response
+			var response tokenAuthorizeHttpResponse
+			if err := json.Unmarshal(res.Body(), &response); err != nil {
+				c.WriteError(err)
 				return
 			}
 
-			// Encode body json
-			body, err := json.Marshal(
-				tokenAuthorizeHttpRequest{
-					Path:   string(c.Path()),
-					Method: string(c.Method()),
-				},
-			)
-			if err != nil {
-				c.WriteError(errors.ErrServiceUnavailable)
-			}
+			// Set data to ctx
+			c.SetUserValue("device", response.Token.Device)
+			c.SetUserValue("user", response.Token.User)
+			c.SetUserValue("roles", response.Token.Roles)
+			c.SetUserValue("mfa_value", response.Token.Mfa)
+			c.SetUserValue("mfa_validation", response.Auth.Mfa)
 
-			// Authorize HTTP JWT token
-			res, err := m.httpClientManager.Request(
-				url.String(),
-				client.WithRequestMethod(http.MethodPost),
-				client.WithRequestContext(c.GetContext()),
-				client.WithRequestBody(body),
-				client.WithRequestHeaders(
-					client.NewRequestHeader("Authorization", "Bearer "+token),
-				),
-			)
-			if err != nil {
-				c.WriteError(errors.ErrServiceUnavailable)
+			// Check two factor
+			if response.Auth.Mfa && response.Token.Mfa {
+				c.WriteError(ErrAuth2faRequired)
 				return
 			}
 
-			// Check status code
-			switch res.StatusCode() {
-			case 200:
-				// Parse response
-				var response tokenAuthorizeHttpResponse
-				if err := json.Unmarshal(res.Body(), &response); err != nil {
-					c.WriteError(errors.ErrServiceUnavailable)
-					return
-				}
-
-				// Set data to ctx
-				c.SetUserValue("device", response.Token.Device)
-				c.SetUserValue("user", response.Token.User)
-				c.SetUserValue("roles", response.Token.Roles)
-				c.SetUserValue("mfa_value", response.Token.Mfa)
-				c.SetUserValue("mfa_validation", response.Auth.Mfa)
-
-				// Check two factor
-				if response.Auth.Mfa && response.Token.Mfa {
-					c.WriteError(ErrAuth2faRequired)
-					return
-				}
-
-				handler(c)
-			case 400:
-				c.WriteError(ErrAuthInvalidToken)
-			case 403:
-				c.WriteError(ErrAuthInsufficientPermissions)
-			default:
-				c.WriteError(errors.ErrServiceUnavailable)
-			}
+			handler(c)
+		case 400:
+			c.WriteError(ErrAuthInvalidToken)
+		case 403:
+			c.WriteError(ErrAuthInsufficientPermissions)
+		default:
+			c.WriteError(errors.ErrServiceUnavailable)
 		}
 	}
 }

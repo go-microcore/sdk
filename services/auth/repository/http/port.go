@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type Interface interface {
+type Adapter interface {
 	// Devices
 	GetDevices(ctx context.Context, authToken string) ([]DeviceResult, error)
 	// Logout

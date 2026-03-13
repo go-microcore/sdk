@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type Interface interface {
+type Adapter interface {
 	// Emails
 	SendCustomEmail(ctx context.Context, authToken string, data SendCustomEmailData) (*SendCustomEmailResult, error)
 	SendEmail(ctx context.Context, authToken string, data SendEmailData) (*SendEmailResult, error)

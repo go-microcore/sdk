@@ -9,45 +9,45 @@ import (
 
 type SendCustomEmailData struct {
 	Name      string `json:"name"`
-	FromEmail string `json:"from_email"`
-	FromName  string `json:"from_name"`
+	FromEmail string `json:"fromEmail"`
+	FromName  string `json:"fromName"`
 	Subject   string `json:"subject"`
-	ToEmail   string `json:"to_email"`
+	ToEmail   string `json:"toEmail"`
 	Html      string `json:"html"`
 	Text      string `json:"text"`
 }
 
 type SendEmailData struct {
 	Name    string           `json:"name"`
-	ToEmail string           `json:"to_email"`
+	ToEmail string           `json:"toEmail"`
 	Vars    *json.RawMessage `json:"vars"`
 }
 
 type FilterEmailsData struct {
-	Id         *[]uint   `json:"id,omitempty"`
+	ID         *[]uint   `json:"id,omitempty"`
 	Name       *[]string `json:"name,omitempty"`
-	FolderId   *[]*uint  `json:"folder_id,omitempty"`
-	FromEmail  *[]string `json:"from_email,omitempty"`
-	FromName   *[]string `json:"from_name,omitempty"`
+	FolderID   *[]*uint  `json:"folderId,omitempty"`
+	FromEmail  *[]string `json:"fromEmail,omitempty"`
+	FromName   *[]string `json:"fromName,omitempty"`
 	Subject    *[]string `json:"subject,omitempty"`
-	SystemFlag *bool     `json:"system_flag,omitempty"`
+	SystemFlag *bool     `json:"systemFlag,omitempty"`
 }
 
 type FilterEmailLogsData struct {
-	Id        *[]uint   `json:"id,omitempty"`
+	ID        *[]uint   `json:"id,omitempty"`
 	Name      *[]string `json:"name,omitempty"`
-	FromEmail *[]string `json:"from_email,omitempty"`
-	FromName  *[]string `json:"from_name,omitempty"`
-	ToEmail   *[]string `json:"to_email,omitempty"`
+	FromEmail *[]string `json:"fromEmail,omitempty"`
+	FromName  *[]string `json:"fromName,omitempty"`
+	ToEmail   *[]string `json:"toEmail,omitempty"`
 	Status    *[]string `json:"status,omitempty"`
-	MessageId *[]string `json:"message_id,omitempty"`
+	MessageID *[]string `json:"messageId,omitempty"`
 }
 
 type UpdateEmailData struct {
 	Name        *string `json:"name,omitempty"`
-	FolderId    *uint   `json:"folder_id,omitempty"`
-	FromEmail   *string `json:"from_email,omitempty"`
-	FromName    *string `json:"from_name,omitempty"`
+	FolderID    *uint   `json:"folderId,omitempty"`
+	FromEmail   *string `json:"fromEmail,omitempty"`
+	FromName    *string `json:"fromName,omitempty"`
 	Subject     *string `json:"subject,omitempty"`
 	Html        *string `json:"html,omitempty"`
 	Text        *string `json:"text,omitempty"`
@@ -56,129 +56,129 @@ type UpdateEmailData struct {
 
 type CreateEmailData struct {
 	Name        string `json:"name"`
-	FolderId    *uint  `json:"folder_id"`
-	FromEmail   string `json:"from_email"`
-	FromName    string `json:"from_name"`
+	FolderID    *uint  `json:"folderId"`
+	FromEmail   string `json:"fromEmail"`
+	FromName    string `json:"fromName"`
 	Subject     string `json:"subject"`
 	Html        string `json:"html"`
 	Text        string `json:"text"`
 	Description string `json:"description"`
-	SystemFlag  bool   `json:"system_flag"`
+	SystemFlag  bool   `json:"systemFlag"`
 }
 
 type FilterEmailFoldersData struct {
-	Id         *[]uint   `json:"id,omitempty"`
-	ParentId   *[]*uint  `json:"parent_id,omitempty"`
+	ID         *[]uint   `json:"id,omitempty"`
+	ParentID   *[]*uint  `json:"parentId,omitempty"`
 	Name       *[]string `json:"name,omitempty"`
-	SystemFlag *bool     `json:"system_flag,omitempty"`
+	SystemFlag *bool     `json:"systemFlag,omitempty"`
 }
 
 type UpdateEmailFolderData struct {
-	ParentId    *uint   `json:"parent_id,omitempty"`
+	ParentID    *uint   `json:"parentId,omitempty"`
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 }
 
 type CreateEmailFolderData struct {
-	ParentId    *uint  `json:"parent_id"`
+	ParentID    *uint  `json:"parentId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	SystemFlag  bool   `json:"system_flag"`
+	SystemFlag  bool   `json:"systemFlag"`
 }
 
 // Results
 
 type SendCustomEmailResult struct {
-	Id        uint      `json:"id"`
+	ID        uint      `json:"id"`
 	Name      string    `json:"name"`
-	FromEmail string    `json:"from_email"`
-	FromName  string    `json:"from_name"`
+	FromEmail string    `json:"fromEmail"`
+	FromName  string    `json:"fromName"`
 	Subject   string    `json:"subject"`
-	ToEmail   string    `json:"to_email"`
+	ToEmail   string    `json:"toEmail"`
 	Html      string    `json:"html"`
 	Text      string    `json:"text"`
 	Status    string    `json:"status"`
-	MessageId *string   `json:"message_id"`
+	MessageID *string   `json:"messageId"`
 	Errors    *string   `json:"errors"`
 	Created   time.Time `json:"created"`
 }
 
 type SendEmailResult struct {
-	Id        uint      `json:"id"`
+	ID        uint      `json:"id"`
 	Name      string    `json:"name"`
-	FromEmail string    `json:"from_email"`
-	FromName  string    `json:"from_name"`
+	FromEmail string    `json:"fromEmail"`
+	FromName  string    `json:"fromName"`
 	Subject   string    `json:"subject"`
-	ToEmail   string    `json:"to_email"`
+	ToEmail   string    `json:"toEmail"`
 	Html      string    `json:"html"`
 	Text      string    `json:"text"`
 	Status    string    `json:"status"`
-	MessageId *string   `json:"message_id"`
+	MessageID *string   `json:"messageId"`
 	Errors    *string   `json:"errors"`
 	Created   time.Time `json:"created"`
 }
 
 type FilterEmailsResult struct {
-	Id          uint      `json:"id"`
+	ID          uint      `json:"id"`
 	Name        string    `json:"name"`
-	FolderId    *uint     `json:"folder_id"`
-	FromEmail   string    `json:"from_email"`
-	FromName    string    `json:"from_name"`
+	FolderID    *uint     `json:"folderId"`
+	FromEmail   string    `json:"fromEmail"`
+	FromName    string    `json:"fromName"`
 	Subject     string    `json:"subject"`
 	Html        string    `json:"html"`
 	Text        string    `json:"text"`
 	Description string    `json:"description"`
-	SystemFlag  bool      `json:"system_flag"`
+	SystemFlag  bool      `json:"systemFlag"`
 	Updated     time.Time `json:"updated"`
 	Created     time.Time `json:"created"`
 }
 
 type FilterEmailLogsResult struct {
-	Id        uint      `json:"id"`
+	ID        uint      `json:"id"`
 	Name      string    `json:"name"`
-	FromEmail string    `json:"from_email"`
-	FromName  string    `json:"from_name"`
+	FromEmail string    `json:"fromEmail"`
+	FromName  string    `json:"fromName"`
 	Subject   string    `json:"subject"`
-	ToEmail   string    `json:"to_email"`
+	ToEmail   string    `json:"toEmail"`
 	Html      string    `json:"html"`
 	Text      string    `json:"text"`
 	Status    string    `json:"status"`
-	MessageId *string   `json:"message_id"`
+	MessageID *string   `json:"messageId"`
 	Errors    *string   `json:"errors"`
 	Created   time.Time `json:"created"`
 }
 
 type CreateEmailResult struct {
-	Id          uint      `json:"id"`
+	ID          uint      `json:"id"`
 	Name        string    `json:"name"`
-	FolderId    *uint     `json:"folder_id"`
-	FromEmail   string    `json:"from_email"`
-	FromName    string    `json:"from_name"`
+	FolderID    *uint     `json:"folderId"`
+	FromEmail   string    `json:"fromEmail"`
+	FromName    string    `json:"fromName"`
 	Subject     string    `json:"subject"`
 	Html        string    `json:"html"`
 	Text        string    `json:"text"`
 	Description string    `json:"description"`
-	SystemFlag  bool      `json:"system_flag"`
+	SystemFlag  bool      `json:"systemFlag"`
 	Updated     time.Time `json:"updated"`
 	Created     time.Time `json:"created"`
 }
 
 type FilterEmailFoldersResult struct {
-	Id          uint      `json:"id"`
-	ParentId    *uint     `json:"parent_id"`
+	ID          uint      `json:"id"`
+	ParentID    *uint     `json:"parentId"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	SystemFlag  bool      `json:"system_flag"`
+	SystemFlag  bool      `json:"systemFlag"`
 	Updated     time.Time `json:"updated"`
 	Created     time.Time `json:"created"`
 }
 
 type CreateEmailFolderResult struct {
-	Id          uint      `json:"id"`
-	ParentId    *uint     `json:"parent_id"`
+	ID          uint      `json:"id"`
+	ParentID    *uint     `json:"parentId"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	SystemFlag  bool      `json:"system_flag"`
+	SystemFlag  bool      `json:"systemFlag"`
 	Updated     time.Time `json:"updated"`
 	Created     time.Time `json:"created"`
 }

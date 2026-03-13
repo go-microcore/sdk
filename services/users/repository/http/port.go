@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type Interface interface {
+type Adapter interface {
 	TwoFASettings(ctx context.Context, authToken string, data TwoFASettingsData) (*TwoFASettingsResult, error)
 	TwoFAEnable(ctx context.Context, authToken string, data TwoFAEnableData) error
 	TwoFADisable(ctx context.Context, authToken string, data TwoFADisableData) error

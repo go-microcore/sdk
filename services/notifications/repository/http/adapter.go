@@ -9,6 +9,7 @@ import (
 
 	"go.microcore.dev/framework/transport/http"
 	"go.microcore.dev/framework/transport/http/client"
+	"go.microcore.dev/sdk/errors"
 )
 
 type Config struct {
@@ -16,7 +17,7 @@ type Config struct {
 	NotificationsServiceEndpoint string
 }
 
-func New(config *Config) Interface {
+func New(config *Config) Adapter {
 	return &adapter{
 		config.HttpClientManager,
 		config.NotificationsServiceEndpoint,
@@ -35,7 +36,7 @@ func (a *adapter) SendCustomEmail(ctx context.Context, authToken string, data Se
 	var url strings.Builder
 	url.WriteString(a.notificationsServiceEndpoint)
 	url.WriteString("/notifications/emails/send/custom")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -65,26 +66,7 @@ func (a *adapter) SendCustomEmail(ctx context.Context, authToken string, data Se
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":       ErrEmailInvalidName,
-		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
-		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
-		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
-		"bad_request:invalid_to_email":   ErrEmailInvalidToEmail,
-		"bad_request:invalid_html":       ErrEmailInvalidHtml,
-		"bad_request:invalid_text":       ErrEmailInvalidText,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmailData) (*SendEmailResult, error) {
@@ -122,22 +104,7 @@ func (a *adapter) SendEmail(ctx context.Context, authToken string, data SendEmai
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":     ErrEmailInvalidName,
-		"bad_request:invalid_to_email": ErrEmailInvalidToEmail,
-		"bad_request:email_not_found":  ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterEmails(ctx context.Context, authToken string, data FilterEmailsData) ([]FilterEmailsResult, error) {
@@ -175,10 +142,7 @@ func (a *adapter) FilterEmails(ctx context.Context, authToken string, data Filte
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data FilterEmailLogsData) ([]FilterEmailLogsResult, error) {
@@ -186,7 +150,7 @@ func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data Fi
 	var url strings.Builder
 	url.WriteString(a.notificationsServiceEndpoint)
 	url.WriteString("/notifications/emails/log")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -216,10 +180,7 @@ func (a *adapter) FilterEmailLogs(ctx context.Context, authToken string, data Fi
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, data UpdateEmailData) error {
@@ -254,27 +215,7 @@ func (a *adapter) UpdateEmail(ctx context.Context, authToken string, id uint, da
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":       ErrEmailInvalidName,
-		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
-		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
-		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
-		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
-		"bad_request:invalid_html":       ErrEmailInvalidHtml,
-		"bad_request:invalid_text":       ErrEmailInvalidText,
-		"bad_request:email_not_found":    ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteEmail(ctx context.Context, authToken string, id uint) error {
@@ -302,20 +243,7 @@ func (a *adapter) DeleteEmail(ctx context.Context, authToken string, id uint) er
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:email_not_found": ErrEmailNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) CreateEmail(ctx context.Context, authToken string, data CreateEmailData) (*CreateEmailResult, error) {
@@ -353,27 +281,7 @@ func (a *adapter) CreateEmail(ctx context.Context, authToken string, data Create
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":       ErrEmailInvalidName,
-		"bad_request:invalid_folder_id":  ErrEmailInvalidFolderId,
-		"bad_request:invalid_from_email": ErrEmailInvalidFromEmail,
-		"bad_request:invalid_from_name":  ErrEmailInvalidFromName,
-		"bad_request:invalid_subject":    ErrEmailInvalidSubject,
-		"bad_request:invalid_html":       ErrEmailInvalidHtml,
-		"bad_request:invalid_text":       ErrEmailInvalidText,
-		"bad_request:email_exist":        ErrEmailExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 // Folders
@@ -383,7 +291,7 @@ func (a *adapter) FilterFolders(ctx context.Context, authToken string, data Filt
 	var url strings.Builder
 	url.WriteString(a.notificationsServiceEndpoint)
 	url.WriteString("/notifications/folders/filter")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -413,10 +321,7 @@ func (a *adapter) FilterFolders(ctx context.Context, authToken string, data Filt
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, data UpdateEmailFolderData) error {
@@ -451,21 +356,7 @@ func (a *adapter) UpdateFolder(ctx context.Context, authToken string, id uint, d
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":     ErrFolderInvalidName,
-		"bad_request:folder_not_found": ErrFolderNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteFolder(ctx context.Context, authToken string, id uint) error {
@@ -493,20 +384,7 @@ func (a *adapter) DeleteFolder(ctx context.Context, authToken string, id uint) e
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:folder_not_found": ErrFolderNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) CreateFolder(ctx context.Context, authToken string, data CreateEmailFolderData) (*CreateEmailFolderResult, error) {
@@ -514,7 +392,7 @@ func (a *adapter) CreateFolder(ctx context.Context, authToken string, data Creat
 	var url strings.Builder
 	url.WriteString(a.notificationsServiceEndpoint)
 	url.WriteString("/notifications/folders/")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -544,20 +422,5 @@ func (a *adapter) CreateFolder(ctx context.Context, authToken string, data Creat
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_parent": ErrFolderInvalidParent,
-		"bad_request:invalid_name":   ErrFolderInvalidName,
-		"bad_request:folder_exist":   ErrFolderExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type Interface interface {
+type Adapter interface {
 	// Dirs
 	CreateDir(ctx context.Context, authToken string, path string) error
 	RenameDir(ctx context.Context, authToken string, data RenameDirData) error

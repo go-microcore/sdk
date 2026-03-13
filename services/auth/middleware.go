@@ -2,18 +2,33 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"go.microcore.dev/framework/errors"
+	"go.microcore.dev/framework/transport"
 	"go.microcore.dev/framework/transport/http"
 	"go.microcore.dev/framework/transport/http/client"
 	"go.microcore.dev/framework/transport/http/server"
 )
 
 var (
-	ErrAuthInsufficientPermissions = errors.New(errors.ErrForbidden, "insufficient_permissions")
-	ErrAuth2faRequired             = errors.New(errors.ErrUnauthorized, "2fa_required")
-	ErrAuthInvalidToken            = errors.New(errors.ErrUnauthorized, "invalid_token")
+	ErrAuthInsufficientPermissions = transport.NewError(
+		transport.ErrForbidden,
+		"insufficient permissions",
+		"INSUFFICIENT_PERMISSIONS",
+	)
+
+	ErrAuth2faRequired = transport.NewError(
+		transport.ErrUnauthorized,
+		"2fa required",
+		"2FA_REQUIRED",
+	)
+
+	ErrAuthInvalidToken = transport.NewError(
+		transport.ErrUnauthorized,
+		"invalid token",
+		"INVALID_TOKEN",
+	)
 )
 
 type tokenAuthorizeHttpRequest struct {
@@ -26,12 +41,12 @@ type tokenAuthorizeHttpResponse struct {
 	Auth  tokenAuthorizeHttpAuthResponse `json:"auth"`
 }
 type tokenAuthorizeHttpDataResponse struct {
-	Id       string   `json:"id"`
+	ID       string   `json:"id"`
 	Device   string   `json:"device"`
 	User     uint     `json:"user"`
 	Roles    []string `json:"roles"`
 	Mfa      bool     `json:"mfa"`
-	Expires  int64    `json:"expires"`
+	Expires  *int64   `json:"expires"`
 	Issued   int64    `json:"issued"`
 	Issuer   string   `json:"issuer"`
 	Audience []string `json:"audience"`
@@ -41,27 +56,27 @@ type tokenAuthorizeHttpAuthResponse struct {
 }
 
 type MiddlewareConfig struct {
-	AuthServiceEndpoint string
-	HttpClientManager   client.Manager
+	AuthServiceServer string
+	HttpClientManager client.Manager
 }
 
-func NewMiddleware(config *MiddlewareConfig) *middleware {
-	return &middleware{
-		authServiceEndpoint: config.AuthServiceEndpoint,
-		httpClientManager:   config.HttpClientManager,
+func NewMiddleware(config *MiddlewareConfig) *Middleware {
+	return &Middleware{
+		authServiceServer: config.AuthServiceServer,
+		httpClientManager: config.HttpClientManager,
 	}
 }
 
-type middleware struct {
-	authServiceEndpoint string
-	httpClientManager   client.Manager
+type Middleware struct {
+	authServiceServer string
+	httpClientManager client.Manager
 }
 
-func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
+func (m *Middleware) Handler(handler server.RequestHandler) server.RequestHandler {
 	return func(c *server.RequestContext) {
 		// Build url
 		var url strings.Builder
-		url.WriteString(m.authServiceEndpoint)
+		url.WriteString(m.authServiceServer)
 		url.WriteString("/auth/tokens/authorize/http")
 
 		// Get auth token
@@ -79,7 +94,7 @@ func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
 			},
 		)
 		if err != nil {
-			c.WriteError(err)
+			c.WriteError(fmt.Errorf("marshal request: %w", err))
 			return
 		}
 
@@ -94,7 +109,7 @@ func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
 			),
 		)
 		if err != nil {
-			c.WriteError(err)
+			c.WriteError(fmt.Errorf("authorize http roles request: %w", err))
 			return
 		}
 
@@ -104,7 +119,13 @@ func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
 			// Parse response
 			var response tokenAuthorizeHttpResponse
 			if err := json.Unmarshal(res.Body(), &response); err != nil {
-				c.WriteError(err)
+				c.WriteError(fmt.Errorf("unmarshal response: %w", err))
+				return
+			}
+
+			// Check two factor
+			if response.Auth.Mfa && response.Token.Mfa {
+				c.WriteError(ErrAuth2faRequired)
 				return
 			}
 
@@ -115,19 +136,15 @@ func (m *middleware) Auth(handler server.RequestHandler) server.RequestHandler {
 			c.SetUserValue("mfa_value", response.Token.Mfa)
 			c.SetUserValue("mfa_validation", response.Auth.Mfa)
 
-			// Check two factor
-			if response.Auth.Mfa && response.Token.Mfa {
-				c.WriteError(ErrAuth2faRequired)
-				return
-			}
-
 			handler(c)
 		case 400:
+			c.WriteError(ErrAuthInvalidToken)
+		case 401:
 			c.WriteError(ErrAuthInvalidToken)
 		case 403:
 			c.WriteError(ErrAuthInsufficientPermissions)
 		default:
-			c.WriteError(errors.ErrServiceUnavailable)
+			c.WriteError(transport.ErrServiceUnavailable)
 		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 
 	"go.microcore.dev/framework/transport/http"
 	"go.microcore.dev/framework/transport/http/client"
+	"go.microcore.dev/sdk/errors"
 )
 
 type Config struct {
@@ -16,7 +17,7 @@ type Config struct {
 	UsersServiceEndpoint string
 }
 
-func New(config *Config) Interface {
+func New(config *Config) Adapter {
 	return &adapter{
 		config.HttpClientManager,
 		config.UsersServiceEndpoint,
@@ -33,7 +34,7 @@ func (a *adapter) TwoFASettings(ctx context.Context, authToken string, data TwoF
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/2fa/settings/")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -63,21 +64,7 @@ func (a *adapter) TwoFASettings(ctx context.Context, authToken string, data TwoF
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_password":     ErrInvalidPassword,
-		"unauthorized:invalid_credentials": ErrInvalidCredentials,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TwoFAEnable(ctx context.Context, authToken string, data TwoFAEnableData) error {
@@ -85,7 +72,7 @@ func (a *adapter) TwoFAEnable(ctx context.Context, authToken string, data TwoFAE
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/2fa/settings/enable")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -111,21 +98,7 @@ func (a *adapter) TwoFAEnable(ctx context.Context, authToken string, data TwoFAE
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token": ErrInvalidToken,
-		"bad_request:mfa_enabled":   ErrMfaEnabled,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TwoFADisable(ctx context.Context, authToken string, data TwoFADisableData) error {
@@ -133,7 +106,7 @@ func (a *adapter) TwoFADisable(ctx context.Context, authToken string, data TwoFA
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/2fa/settings/disable")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -159,23 +132,7 @@ func (a *adapter) TwoFADisable(ctx context.Context, authToken string, data TwoFA
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_password":     ErrInvalidPassword,
-		"bad_request:invalid_token":        ErrInvalidToken,
-		"bad_request:mfa_disabled":         ErrMfaDisabled,
-		"unauthorized:invalid_credentials": ErrInvalidCredentials,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TwoFAValidate(ctx context.Context, authToken string, data TwoFAValidateData) (*TwoFAValidateResult, error) {
@@ -183,7 +140,7 @@ func (a *adapter) TwoFAValidate(ctx context.Context, authToken string, data TwoF
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/2fa/validate")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -213,21 +170,7 @@ func (a *adapter) TwoFAValidate(ctx context.Context, authToken string, data TwoF
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token": ErrInvalidToken,
-		"bad_request:mfa_disabled":  ErrMfaDisabled,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) Signin(ctx context.Context, data SigninData) (*SigninResult, error) {
@@ -235,7 +178,7 @@ func (a *adapter) Signin(ctx context.Context, data SigninData) (*SigninResult, e
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/signin")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -262,22 +205,7 @@ func (a *adapter) Signin(ctx context.Context, data SigninData) (*SigninResult, e
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_login":        ErrInvalidLogin,
-		"bad_request:invalid_password":     ErrInvalidPassword,
-		"unauthorized:invalid_credentials": ErrInvalidCredentials,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) Signup(ctx context.Context, data SignupData) (*SignupResult, error) {
@@ -285,7 +213,7 @@ func (a *adapter) Signup(ctx context.Context, data SignupData) (*SignupResult, e
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/signup")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -312,25 +240,7 @@ func (a *adapter) Signup(ctx context.Context, data SignupData) (*SignupResult, e
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":        ErrInvalidName,
-		"bad_request:invalid_username":    ErrInvalidUsername,
-		"bad_request:invalid_email":       ErrInvalidEmail,
-		"bad_request:invalid_password":    ErrInvalidPassword,
-		"bad_request:user_exist_email":    ErrExistEmail,
-		"bad_request:user_exist_username": ErrExistUsername,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) Profile(ctx context.Context, authToken string) (*ProfileResult, error) {
@@ -338,7 +248,7 @@ func (a *adapter) Profile(ctx context.Context, authToken string) (*ProfileResult
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/profile")
-	
+
 	// Send service request
 	res, err := a.httpClientManager.Request(
 		url.String(),
@@ -361,10 +271,7 @@ func (a *adapter) Profile(ctx context.Context, authToken string) (*ProfileResult
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterUsers(ctx context.Context, authToken string, data FilterUsersData) ([]FilterUsersResult, error) {
@@ -372,7 +279,7 @@ func (a *adapter) FilterUsers(ctx context.Context, authToken string, data Filter
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/filter")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -402,10 +309,7 @@ func (a *adapter) FilterUsers(ctx context.Context, authToken string, data Filter
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) UpdateUser(ctx context.Context, authToken string, id string, data UpdateUserData) error {
@@ -414,7 +318,7 @@ func (a *adapter) UpdateUser(ctx context.Context, authToken string, id string, d
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/")
 	url.WriteString(id)
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -440,26 +344,7 @@ func (a *adapter) UpdateUser(ctx context.Context, authToken string, id string, d
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":        ErrInvalidName,
-		"bad_request:invalid_username":    ErrInvalidUsername,
-		"bad_request:invalid_email":       ErrInvalidEmail,
-		"bad_request:invalid_roles":       ErrInvalidRoles,
-		"bad_request:user_exist_username": ErrExistUsername,
-		"bad_request:user_exist_email":    ErrExistEmail,
-		"bad_request:user_not_found":      ErrNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteUser(ctx context.Context, authToken string, id uint) error {
@@ -487,21 +372,7 @@ func (a *adapter) DeleteUser(ctx context.Context, authToken string, id uint) err
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:user_not_found": ErrNotFound,
-		"bad_request:user_is_used":   ErrUserIsUsed,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) CreateUser(ctx context.Context, authToken string, data CreateUserData) (*CreateUserResult, error) {
@@ -509,7 +380,7 @@ func (a *adapter) CreateUser(ctx context.Context, authToken string, data CreateU
 	var url strings.Builder
 	url.WriteString(a.usersServiceEndpoint)
 	url.WriteString("/users/")
-	
+
 	// Encode body json
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -539,24 +410,5 @@ func (a *adapter) CreateUser(ctx context.Context, authToken string, data CreateU
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_name":        ErrInvalidName,
-		"bad_request:invalid_username":    ErrInvalidUsername,
-		"bad_request:invalid_password":    ErrInvalidPassword,
-		"bad_request:invalid_email":       ErrInvalidEmail,
-		"bad_request:invalid_roles":       ErrInvalidRoles,
-		"bad_request:user_exist_username": ErrExistUsername,
-		"bad_request:user_exist_email":    ErrExistEmail,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }

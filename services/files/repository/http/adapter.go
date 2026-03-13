@@ -12,6 +12,7 @@ import (
 
 	"go.microcore.dev/framework/transport/http"
 	"go.microcore.dev/framework/transport/http/client"
+	"go.microcore.dev/sdk/errors"
 )
 
 type Config struct {
@@ -19,7 +20,7 @@ type Config struct {
 	FilesServiceEndpoint string
 }
 
-func New(config *Config) Interface {
+func New(config *Config) Adapter {
 	return &adapter{
 		config.HttpClientManager,
 		config.FilesServiceEndpoint,
@@ -58,21 +59,7 @@ func (a *adapter) CreateDir(ctx context.Context, authToken string, path string) 
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_path": ErrDirInvalidPath,
-		"bad_request:dir_exist":    ErrDirExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) RenameDir(ctx context.Context, authToken string, data RenameDirData) error {
@@ -106,23 +93,7 @@ func (a *adapter) RenameDir(ctx context.Context, authToken string, data RenameDi
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_old_path":  ErrDirInvalidOldPath,
-		"bad_request:invalid_new_path":  ErrDirInvalidNewPath,
-		"bad_request:old_dir_not_found": ErrDirOldNotFound,
-		"bad_request:new_dir_exist":     ErrDirNewExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteDir(ctx context.Context, authToken string, path string) error {
@@ -150,21 +121,7 @@ func (a *adapter) DeleteDir(ctx context.Context, authToken string, path string) 
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_path":  ErrDirInvalidPath,
-		"bad_request:dir_not_found": ErrDirNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 // Files
@@ -205,20 +162,7 @@ func (a *adapter) StreamFile(ctx context.Context, token string) ([]byte, error) 
 		return res.Body(), nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token": ErrFileInvalidToken,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DownloadFile(ctx context.Context, authToken string, path string) (*DownloadFileResult, error) {
@@ -250,21 +194,7 @@ func (a *adapter) DownloadFile(ctx context.Context, authToken string, path strin
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_path":   ErrDirInvalidPath,
-		"bad_request:file_not_found": ErrFileNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) ListFiles(ctx context.Context, authToken string, path string) ([]FileResult, error) {
@@ -296,20 +226,7 @@ func (a *adapter) ListFiles(ctx context.Context, authToken string, path string) 
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_path": ErrDirInvalidPath,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) CreateFile(ctx context.Context, authToken string, data CreateFileData) error {
@@ -359,21 +276,7 @@ func (a *adapter) CreateFile(ctx context.Context, authToken string, data CreateF
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:dir_not_found": ErrDirNotFound,
-		"bad_request:file_exist":    ErrFileExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) RenameFile(ctx context.Context, authToken string, data RenameFileData) error {
@@ -407,23 +310,7 @@ func (a *adapter) RenameFile(ctx context.Context, authToken string, data RenameF
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_old_path":   ErrDirInvalidOldPath,
-		"bad_request:invalid_new_path":   ErrDirInvalidNewPath,
-		"bad_request:old_file_not_found": ErrFileOldNotFound,
-		"bad_request:new_file_exist":     ErrFileNewExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteFile(ctx context.Context, authToken string, path string) error {
@@ -451,19 +338,5 @@ func (a *adapter) DeleteFile(ctx context.Context, authToken string, path string)
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_path":   ErrDirInvalidPath,
-		"bad_request:file_not_found": ErrFileNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }

@@ -5,8 +5,8 @@ import "io"
 // Data
 
 type RenameDirData struct {
-	OldPath string `json:"old_path"`
-	NewPath string `json:"new_path"`
+	OldPath string `json:"oldPath"`
+	NewPath string `json:"newPath"`
 }
 
 type CreateFileData struct {
@@ -16,17 +16,17 @@ type CreateFileData struct {
 }
 
 type RenameFileData struct {
-	OldPath string `json:"old_path"`
-	NewPath string `json:"new_path"`
+	OldPath string `json:"oldPath"`
+	NewPath string `json:"newPath"`
 }
 
 // Results
 
 type FileResult struct {
 	Name     string  `json:"name"`
-	IsDir    bool    `json:"is_dir"`
+	IsDir    bool    `json:"isDir"`
 	Size     *int64  `json:"size"`
-	MimeType *string `json:"mime_type"`
+	MimeType *string `json:"mimeType"`
 }
 
 type DownloadFileResult struct {

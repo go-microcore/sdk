@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.microcore.dev/framework/errors"
+	"go.microcore.dev/sdk/errors"
 	"go.microcore.dev/framework/transport/http"
 	"go.microcore.dev/framework/transport/http/client"
 )
@@ -22,7 +22,7 @@ type Config struct {
 	AuthKey             []byte
 }
 
-func New(config *Config) (Interface, error) {
+func New(config *Config) (Adapter, error) {
 	// Check auth key len
 	if len(config.AuthKey) < AuthKeyMinLen {
 		return nil, fmt.Errorf(
@@ -74,10 +74,7 @@ func (a *adapter) GetDevices(ctx context.Context, authToken string) ([]DeviceRes
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 // Logout
@@ -106,10 +103,7 @@ func (a *adapter) Logout(ctx context.Context, authToken string) error {
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) LogoutAll(ctx context.Context, authToken string) error {
@@ -136,10 +130,7 @@ func (a *adapter) LogoutAll(ctx context.Context, authToken string) error {
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) LogoutDevice(ctx context.Context, authToken string, data LogoutDeviceData) error {
@@ -173,20 +164,7 @@ func (a *adapter) LogoutDevice(ctx context.Context, authToken string, data Logou
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_device": ErrInvalidDevice,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 // Roles
@@ -226,23 +204,7 @@ func (a *adapter) CreateRole(ctx context.Context, authToken string, data CreateR
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_role_id":          ErrInvalidRoleId,
-		"bad_request:invalid_role_name":        ErrInvalidRoleName,
-		"bad_request:invalid_role_description": ErrInvalidRoleDescription,
-		"bad_request:role_exist_id":            ErrRoleExistId,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterRoles(ctx context.Context, authToken string, data FilterRolesData) ([]FilterRolesResult, error) {
@@ -280,10 +242,7 @@ func (a *adapter) FilterRoles(ctx context.Context, authToken string, data Filter
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) UpdateRole(ctx context.Context, authToken string, id string, data UpdateRoleData) error {
@@ -318,23 +277,7 @@ func (a *adapter) UpdateRole(ctx context.Context, authToken string, id string, d
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_role_id":          ErrInvalidRoleId,
-		"bad_request:invalid_role_name":        ErrInvalidRoleName,
-		"bad_request:invalid_role_description": ErrInvalidRoleDescription,
-		"bad_request:role_not_found":           ErrRoleNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteRole(ctx context.Context, authToken string, id string) error {
@@ -362,20 +305,7 @@ func (a *adapter) DeleteRole(ctx context.Context, authToken string, id string) e
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:role_not_found": ErrRoleNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 // Rules (HTTP)
@@ -415,23 +345,7 @@ func (a *adapter) CreateHttpRule(ctx context.Context, authToken string, data Cre
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_role_id": ErrInvalidRoleId,
-		"bad_request:invalid_path":    ErrInvalidPath,
-		"bad_request:invalid_methods": ErrInvalidMethods,
-		"bad_request:rule_exist":      ErrRuleExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterHttpRules(ctx context.Context, authToken string, data FilterHttpRulesData) ([]FilterHttpRulesResult, error) {
@@ -468,11 +382,8 @@ func (a *adapter) FilterHttpRules(ctx context.Context, authToken string, data Fi
 		}
 		return response, nil
 	}
-	
-	// Response message
-	errMessage := string(res.Body())
 
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) UpdateHttpRule(ctx context.Context, authToken string, id uint, data UpdateHttpRuleData) error {
@@ -507,24 +418,7 @@ func (a *adapter) UpdateHttpRule(ctx context.Context, authToken string, id uint,
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_role_id": ErrInvalidRoleId,
-		"bad_request:invalid_path":    ErrInvalidPath,
-		"bad_request:invalid_methods": ErrInvalidMethods,
-		"bad_request:invalid_mfa":     ErrInvalidMfa,
-		"bad_request:rule_not_found":  ErrRuleNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteHttpRule(ctx context.Context, authToken string, id uint) error {
@@ -552,20 +446,7 @@ func (a *adapter) DeleteHttpRule(ctx context.Context, authToken string, id uint)
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:rule_not_found": ErrRuleNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 // Tokens
@@ -614,20 +495,7 @@ func (a *adapter) Auth(ctx context.Context, data AuthData) (*AuthResult, error) 
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(decResponseBody)
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request": errors.ErrBadRequest,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult, error) {
@@ -674,20 +542,7 @@ func (a *adapter) Auth2fa(ctx context.Context, data Auth2faData) (*Auth2faResult
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(decResponseBody)
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request": errors.ErrBadRequest,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TokenRenew(ctx context.Context, data TokenRenewData) (*TokenRenewResult, error) {
@@ -722,21 +577,7 @@ func (a *adapter) TokenRenew(ctx context.Context, data TokenRenewData) (*TokenRe
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token":      ErrInvalidToken,
-		"bad_request:token_already_used": ErrTokenAlreadyUsed,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TokenValidate(ctx context.Context, authToken string) (*TokenValidateResult, error) {
@@ -767,20 +608,7 @@ func (a *adapter) TokenValidate(ctx context.Context, authToken string) (*TokenVa
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token": ErrInvalidToken,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) TokenAuthorizeHttp(ctx context.Context, authToken string, data TokenAuthorizeHttpData) (*TokenAuthorizeHttpResult, error) {
@@ -818,23 +646,7 @@ func (a *adapter) TokenAuthorizeHttp(ctx context.Context, authToken string, data
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_token":          ErrInvalidToken,
-		"bad_request:invalid_path":           ErrInvalidPath,
-		"bad_request:invalid_methods":        ErrInvalidMethods,
-		"forbidden:insufficient_permissions": ErrInsufficientPermissions,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 // Static access tokens
@@ -874,23 +686,7 @@ func (a *adapter) CreateStaticAccessToken(ctx context.Context, authToken string,
 		return &response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:invalid_id":          ErrInvalidId,
-		"bad_request:invalid_roles":       ErrInvalidRoles,
-		"bad_request:invalid_description": ErrInvalidDescription,
-		"bad_request:static_token_exist":  ErrStaticTokenExist,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return nil, err
-	}
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) FilterStaticAccessTokens(ctx context.Context, authToken string, data FilterStaticAccessTokenData) ([]FilterStaticAccessTokenResult, error) {
@@ -928,10 +724,7 @@ func (a *adapter) FilterStaticAccessTokens(ctx context.Context, authToken string
 		return response, nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	return nil, fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return nil, errors.UnmarshalError(res.Body())
 }
 
 func (a *adapter) DeleteStaticAccessToken(ctx context.Context, authToken string, id string) error {
@@ -959,20 +752,7 @@ func (a *adapter) DeleteStaticAccessToken(ctx context.Context, authToken string,
 		return nil
 	}
 
-	// Response message
-	errMessage := string(res.Body())
-
-	// Errors map
-	var errMap = map[string]error{
-		"bad_request:static_token_not_found": ErrStaticTokenNotFound,
-	}
-
-	// Parse errors
-	if err, ok := errMap[errMessage]; ok {
-		return err
-	}
-
-	return fmt.Errorf("unexpected response: status code: %d, message: %s", res.StatusCode(), errMessage)
+	return errors.UnmarshalError(res.Body())
 }
 
 // Helper for encrypt auth request data

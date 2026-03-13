@@ -9,43 +9,43 @@ type LogoutDeviceData struct {
 }
 
 type CreateRoleData struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	SystemFlag  bool   `json:"system_flag"`
-	ServiceFlag bool   `json:"service_flag"`
+	SystemFlag  bool   `json:"systemFlag"`
+	ServiceFlag bool   `json:"serviceFlag"`
 }
 
 type FilterRolesData struct {
-	Id          *[]string `json:"id,omitempty"`
+	ID          *[]string `json:"id,omitempty"`
 	Name        *[]string `json:"name,omitempty"`
-	SystemFlag  *bool     `json:"system_flag,omitempty"`
-	ServiceFlag *bool     `json:"service_flag,omitempty"`
+	SystemFlag  *bool     `json:"systemFlag,omitempty"`
+	ServiceFlag *bool     `json:"serviceFlag,omitempty"`
 }
 
 type UpdateRoleData struct {
-	Id          *string `json:"id,omitempty"`
+	ID          *string `json:"id,omitempty"`
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 }
 
 type CreateHttpRuleData struct {
-	RoleId  string   `json:"role_id"`
+	RoleID  string   `json:"roleId"`
 	Path    string   `json:"path"`
 	Methods []string `json:"methods"`
 	Mfa     bool     `json:"mfa"`
 }
 
 type FilterHttpRulesData struct {
-	Id      *[]uint   `json:"id,omitempty"`
-	RoleId  *[]string `json:"role_id,omitempty"`
+	ID      *[]uint   `json:"id,omitempty"`
+	RoleID  *[]string `json:"roleId,omitempty"`
 	Path    *[]string `json:"path,omitempty"`
 	Methods *[]string `json:"methods,omitempty"`
 	Mfa     *bool     `json:"mfa,omitempty"`
 }
 
 type UpdateHttpRuleData struct {
-	RoleId  *uint     `json:"role_id,omitempty"`
+	RoleID  *uint     `json:"roleId,omitempty"`
 	Path    *string   `json:"path,omitempty"`
 	Methods *[]string `json:"methods,omitempty"`
 	Mfa     *bool     `json:"mfa,omitempty"`
@@ -56,18 +56,18 @@ type AuthData struct {
 	Roles              []string  `json:"roles"`
 	Mfa                bool      `json:"mfa"`
 	Device             string    `json:"device"`
-	MetaLocation       string    `json:"meta_location"`
-	MetaIp             string    `json:"meta_ip"`
-	MetaUserAgent      string    `json:"meta_user_agent"`
-	MetaOsFullName     string    `json:"meta_os_full_name"`
-	MetaOsName         string    `json:"meta_os_name"`
-	MetaOsVersion      string    `json:"meta_os_version"`
-	MetaPlatform       string    `json:"meta_platform"`
-	MetaModel          string    `json:"meta_model"`
-	MetaBrowserName    string    `json:"meta_browser_name"`
-	MetaBrowserVersion string    `json:"meta_browser_version"`
-	MetaEngineName     string    `json:"meta_engine_name"`
-	MetaEngineVersion  string    `json:"meta_engine_version"`
+	MetaLocation       string    `json:"metaLocation"`
+	MetaIP             string    `json:"metaIp"`
+	MetaUserAgent      string    `json:"metaUserAgent"`
+	MetaOsFullName     string    `json:"metaOsFullName"`
+	MetaOsName         string    `json:"metaOsName"`
+	MetaOsVersion      string    `json:"metaOsVersion"`
+	MetaPlatform       string    `json:"metaPlatform"`
+	MetaModel          string    `json:"metaModel"`
+	MetaBrowserName    string    `json:"metaBrowserName"`
+	MetaBrowserVersion string    `json:"metaBrowserVersion"`
+	MetaEngineName     string    `json:"metaEngineName"`
+	MetaEngineVersion  string    `json:"metaEngineVersion"`
 	Ttl                time.Time `json:"ttl"`
 }
 
@@ -79,7 +79,7 @@ type Auth2faData struct {
 }
 
 type TokenRenewData struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type TokenAuthorizeHttpData struct {
@@ -88,60 +88,60 @@ type TokenAuthorizeHttpData struct {
 }
 
 type CreateStaticAccessTokenData struct {
-	Id          string   `json:"id"`
+	ID          string   `json:"id"`
 	Roles       []string `json:"roles"`
 	Description string   `json:"description"`
 }
 
 type FilterStaticAccessTokenData struct {
-	Id *[]string `json:"id,omitempty"`
+	ID *[]string `json:"id,omitempty"`
 }
 
 // Results
 
 type DeviceResult struct {
-	Id      string        `json:"id"`
+	ID      string        `json:"id"`
 	Session SessionResult `json:"session"`
 }
 type SessionResult struct {
-	IssuedAt       string `json:"issued_at"`
+	IssuedAt       string `json:"issuedAt"`
 	Location       string `json:"location"`
 	Ip             string `json:"ip"`
-	UserAgent      string `json:"user_agent"`
-	OsFullName     string `json:"os_full_name"`
-	OsName         string `json:"os_name"`
-	OsVersion      string `json:"os_version"`
+	UserAgent      string `json:"userAgent"`
+	OsFullName     string `json:"osFullName"`
+	OsName         string `json:"osName"`
+	OsVersion      string `json:"osVersion"`
 	Platform       string `json:"platform"`
 	Model          string `json:"model"`
-	BrowserName    string `json:"browser_name"`
-	BrowserVersion string `json:"browser_version"`
-	EngineName     string `json:"engine_name"`
-	EngineVersion  string `json:"engine_version"`
+	BrowserName    string `json:"browserName"`
+	BrowserVersion string `json:"browserVersion"`
+	EngineName     string `json:"engineName"`
+	EngineVersion  string `json:"engineVersion"`
 }
 
 type CreateRoleResult struct {
-	Id          string    `json:"id"`
+	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	SystemFlag  bool      `json:"system_flag"`
-	ServiceFlag bool      `json:"service_flag"`
+	SystemFlag  bool      `json:"systemFlag"`
+	ServiceFlag bool      `json:"serviceFlag"`
 	Created     time.Time `json:"created"`
 	Updated     time.Time `json:"updated"`
 }
 
 type FilterRolesResult struct {
-	Id          string                      `json:"id"`
+	ID          string                      `json:"id"`
 	Name        string                      `json:"name"`
 	Description string                      `json:"description"`
-	SystemFlag  bool                        `json:"system_flag"`
-	ServiceFlag bool                        `json:"service_flag"`
+	SystemFlag  bool                        `json:"systemFlag"`
+	ServiceFlag bool                        `json:"serviceFlag"`
 	Created     time.Time                   `json:"created"`
 	Updated     time.Time                   `json:"updated"`
-	HttpRules   []FilterRolesHttpRuleResult `json:"http_rules"`
+	HttpRules   []FilterRolesHttpRuleResult `json:"httpRules"`
 }
 type FilterRolesHttpRuleResult struct {
-	Id      uint      `json:"id"`
-	RoleId  string    `json:"role_id"`
+	ID      uint      `json:"id"`
+	RoleID  string    `json:"roleId"`
 	Path    string    `json:"path"`
 	Methods []string  `json:"methods"`
 	Mfa     bool      `json:"mfa"`
@@ -150,8 +150,8 @@ type FilterRolesHttpRuleResult struct {
 }
 
 type CreateHttpRuleResult struct {
-	Id      uint      `json:"id"`
-	RoleId  string    `json:"role_id"`
+	ID      uint      `json:"id"`
+	RoleID  string    `json:"roleId"`
 	Path    string    `json:"path"`
 	Methods []string  `json:"methods"`
 	Mfa     bool      `json:"mfa"`
@@ -160,8 +160,8 @@ type CreateHttpRuleResult struct {
 }
 
 type FilterHttpRulesResult struct {
-	Id      uint      `json:"id"`
-	RoleId  string    `json:"role_id"`
+	ID      uint      `json:"id"`
+	RoleID  string    `json:"roleId"`
 	Path    string    `json:"path"`
 	Methods []string  `json:"methods"`
 	Mfa     bool      `json:"mfa"`
@@ -173,7 +173,7 @@ type AuthResult struct {
 	Access    string `json:"access"`
 	Refresh   string `json:"refresh"`
 	Mfa       bool   `json:"mfa"`
-	NewDevice bool   `json:"new_device"`
+	NewDevice bool   `json:"newDevice"`
 }
 
 type Auth2faResult struct {
@@ -182,13 +182,13 @@ type Auth2faResult struct {
 }
 
 type TokenRenewResult struct {
-	Access  string `json:"access_token"`
-	Refresh string `json:"refresh_token"`
-	Mfa     bool   `json:"mfa_required"`
+	Access  string `json:"accessToken"`
+	Refresh string `json:"refreshToken"`
+	Mfa     bool   `json:"mfaRequired"`
 }
 
 type TokenValidateResult struct {
-	Id       string   `json:"id"`
+	ID       string   `json:"id"`
 	Device   string   `json:"device"`
 	User     uint     `json:"user"`
 	Roles    []string `json:"roles"`
@@ -204,7 +204,7 @@ type TokenAuthorizeHttpResult struct {
 	Auth  TokenAuthorizeHttpAuthResult `json:"auth"`
 }
 type TokenAuthorizeHttpDataResult struct {
-	Id       string   `json:"id"`
+	ID       string   `json:"id"`
 	Device   string   `json:"device"`
 	User     uint     `json:"user"`
 	Roles    []string `json:"roles"`
@@ -223,9 +223,9 @@ type CreateStaticAccessTokenResult struct {
 }
 
 type FilterStaticAccessTokenResult struct {
-	Id          string    `json:"id"`
+	ID          string    `json:"id"`
 	Token       string    `json:"token"`
-	UserId      uint      `json:"user_id"`
+	UserID      uint      `json:"userId"`
 	Device      string    `json:"device"`
 	Roles       []string  `json:"roles"`
 	Description string    `json:"description"`
